@@ -1,10 +1,6 @@
 # Compiled output
 target/
 
-# Maven
-.mvn/
-mvnw
-mvnw.cmd
 
 # IDE
 .idea/
