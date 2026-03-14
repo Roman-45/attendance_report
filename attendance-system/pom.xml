@@ -24,6 +24,8 @@
         <mapstruct.version>1.5.5.Final</mapstruct.version>
         <jjwt.version>0.12.3</jjwt.version>
         <testcontainers.version>1.19.7</testcontainers.version>
+        <!-- Override Lombok to a version that supports JDK 24 -->
+        <lombok.version>1.18.36</lombok.version>
     </properties>
 
     <dependencyManagement>
@@ -136,6 +138,19 @@
             <artifactId>spring-boot-starter-test</artifactId>
             <scope>test</scope>
         </dependency>
+        <!--
+            Apache HttpClient 5 for TestRestTemplate.
+            When httpclient5 is on the test classpath, Spring Boot's TestRestTemplate
+            automatically uses HttpComponentsClientHttpRequestFactory instead of
+            Java's HttpURLConnection. This prevents the "cannot retry due to server
+            authentication, in streaming mode" error that HttpURLConnection throws
+            when a 401 response carries a WWW-Authenticate header.
+        -->
+        <dependency>
+            <groupId>org.apache.httpcomponents.client5</groupId>
+            <artifactId>httpclient5</artifactId>
+            <scope>test</scope>
+        </dependency>
         <dependency>
             <groupId>org.springframework.security</groupId>
             <artifactId>spring-security-test</artifactId>
@@ -155,6 +170,7 @@
         <dependency>
             <groupId>org.flywaydb</groupId>
             <artifactId>flyway-database-postgresql</artifactId>
+            <version>10.10.0</version>
             <scope>test</scope>
         </dependency>
     </dependencies>
@@ -190,6 +206,14 @@
                             <version>${mapstruct.version}</version>
                         </path>
                     </annotationProcessorPaths>
+                </configuration>
+            </plugin>
+            <!-- Allow Mockito inline mocking on JDK 21+ -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <configuration>
+                    <argLine>-XX:+EnableDynamicAgentLoading -Xshare:off</argLine>
                 </configuration>
             </plugin>
         </plugins>

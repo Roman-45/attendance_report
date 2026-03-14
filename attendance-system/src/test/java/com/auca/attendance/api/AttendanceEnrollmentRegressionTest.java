@@ -1,9 +1,17 @@
 package com.auca.attendance.api;
 
 import com.auca.attendance.BaseIntegrationTest;
-import com.auca.attendance.entity.*;
+import com.auca.attendance.entity.AttendanceSession;
+import com.auca.attendance.entity.Enrollment;
+import com.auca.attendance.entity.Module;
+import com.auca.attendance.entity.Student;
+import com.auca.attendance.entity.User;
 import com.auca.attendance.enums.Role;
-import com.auca.attendance.repository.*;
+import com.auca.attendance.repository.AttendanceSessionRepository;
+import com.auca.attendance.repository.EnrollmentRepository;
+import com.auca.attendance.repository.ModuleRepository;
+import com.auca.attendance.repository.StudentRepository;
+import com.auca.attendance.repository.UserRepository;
 import com.auca.attendance.security.JwtService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -58,6 +66,7 @@ class AttendanceEnrollmentRegressionTest extends BaseIntegrationTest {
                         .email("enroll_student@auca.ac.rw").cohortYear(2024).program("CS")
                         .build()));
 
+        final User finalFacilitator = facilitator;
         module = moduleRepository.findAll().stream()
                 .filter(m -> "ENROLL_CS101".equals(m.getCode()))
                 .findFirst()
@@ -65,6 +74,7 @@ class AttendanceEnrollmentRegressionTest extends BaseIntegrationTest {
                         .code("ENROLL_CS101").name("Enrollment Test Module").description("d")
                         .startDate(LocalDate.now().minusMonths(1))
                         .endDate(LocalDate.now().plusMonths(5))
+                        .createdBy(finalFacilitator)
                         .build()));
 
         session = sessionRepository.save(AttendanceSession.builder()
@@ -123,16 +133,16 @@ class AttendanceEnrollmentRegressionTest extends BaseIntegrationTest {
         // Ensure student is NOT enrolled
         enrollmentRepository.deleteByStudentIdAndModuleId(student.getId(), module.getId());
 
-        Map<String, Object> recordBody = Map.of(
-                "records", List.of(Map.of(
-                        "studentId", student.getId(),
-                        "status", "PRESENT",
-                        "notes", "")));
+        // Controller expects a plain JSON array — NOT wrapped in {"records": [...]}
+        List<Map<String, Object>> records = List.of(Map.of(
+                "studentId", student.getId(),
+                "status", "PRESENT",
+                "notes", ""));
 
         ResponseEntity<Map> resp = restTemplate.exchange(
                 "/api/v1/sessions/" + session.getId() + "/records",
                 HttpMethod.POST,
-                withToken(facilitatorToken, recordBody),
+                withToken(facilitatorToken, records),
                 Map.class);
 
         assertThat(resp.getStatusCode()).isEqualTo(HttpStatus.CONFLICT);
@@ -141,20 +151,22 @@ class AttendanceEnrollmentRegressionTest extends BaseIntegrationTest {
     @Test
     @DisplayName("Submitting attendance for an ENROLLED student returns 200")
     void submitAttendance_ShouldReturn200_WhenStudentIsEnrolled() {
-        // Enroll first
-        enrollmentRepository.save(Enrollment.builder()
-                .student(student).module(module).build());
+        // Enroll first (guard against duplicate enrollment from parallel test runs)
+        if (!enrollmentRepository.existsByStudentIdAndModuleId(student.getId(), module.getId())) {
+            enrollmentRepository.save(Enrollment.builder()
+                    .student(student).module(module).build());
+        }
 
-        Map<String, Object> recordBody = Map.of(
-                "records", List.of(Map.of(
-                        "studentId", student.getId(),
-                        "status", "PRESENT",
-                        "notes", "")));
+        // Controller expects a plain JSON array — NOT wrapped in {"records": [...]}
+        List<Map<String, Object>> records = List.of(Map.of(
+                "studentId", student.getId(),
+                "status", "PRESENT",
+                "notes", ""));
 
         ResponseEntity<Map> resp = restTemplate.exchange(
                 "/api/v1/sessions/" + session.getId() + "/records",
                 HttpMethod.POST,
-                withToken(facilitatorToken, recordBody),
+                withToken(facilitatorToken, records),
                 Map.class);
 
         assertThat(resp.getStatusCode()).isEqualTo(HttpStatus.OK);

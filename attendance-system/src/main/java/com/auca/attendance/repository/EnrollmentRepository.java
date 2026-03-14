@@ -2,6 +2,7 @@ package com.auca.attendance.repository;
 
 import com.auca.attendance.entity.Enrollment;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
@@ -13,5 +14,7 @@ public interface EnrollmentRepository extends JpaRepository<Enrollment, Long> {
 
     boolean existsByStudentIdAndModuleId(Long studentId, Long moduleId);
 
+    // Derived delete requires an explicit transaction — Spring Data does not add one automatically
+    @Transactional
     void deleteByStudentIdAndModuleId(Long studentId, Long moduleId);
 }

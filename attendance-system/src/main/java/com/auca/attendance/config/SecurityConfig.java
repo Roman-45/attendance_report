@@ -1,6 +1,7 @@
 package com.auca.attendance.config;
 
 import com.auca.attendance.security.JwtAuthenticationFilter;
+import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -38,6 +39,17 @@ public class SecurityConfig {
                 .requestMatchers("/swagger-ui/**", "/api-docs/**", "/swagger-ui.html").permitAll()
                 .requestMatchers("/actuator/health").permitAll()
                 .anyRequest().authenticated()
+            )
+            .exceptionHandling(ex -> ex
+                // Return JSON 401 without WWW-Authenticate header.
+                // Without this, HttpURLConnection retries on 401 and crashes
+                // in streaming mode (affects TestRestTemplate and some HTTP clients).
+                .authenticationEntryPoint((request, response, authException) -> {
+                    response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+                    response.setContentType("application/json");
+                    response.getWriter().write(
+                        "{\"success\":false,\"message\":\"Authentication required\",\"data\":null}");
+                })
             )
             .authenticationProvider(authenticationProvider)
             .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);

@@ -111,12 +111,14 @@ class SecurityRegressionTest extends BaseIntegrationTest {
     @Test
     @DisplayName("ADMIN cannot create an attendance session (FACILITATOR only) — must return 403")
     void admin_CannotCreateAttendanceSession() {
+        // Actual path: POST /api/v1/modules/{moduleId}/sessions
+        // @PreAuthorize fires BEFORE service so moduleId=1 not existing does not matter
         Map<String, Object> body = Map.of(
-                "moduleId", 1, "sessionDate", "2025-01-01",
+                "sessionDate", "2025-01-01",
                 "startTime", "08:00", "endTime", "10:00", "period", "MORNING");
 
         ResponseEntity<Map> resp = restTemplate.exchange(
-                "/api/v1/sessions",
+                "/api/v1/modules/1/sessions",
                 HttpMethod.POST,
                 withToken(adminToken, body),
                 Map.class);
@@ -127,11 +129,13 @@ class SecurityRegressionTest extends BaseIntegrationTest {
     @Test
     @DisplayName("FACILITATOR cannot manage mark columns (INSTRUCTOR only) — must return 403")
     void facilitator_CannotCreateMarkColumn() {
+        // Actual path: POST /api/v1/modules/{moduleId}/columns
+        // @PreAuthorize fires BEFORE service so moduleId=1 not existing does not matter
         Map<String, Object> body = Map.of(
-                "moduleId", 1, "name", "Midterm", "type", "MIDTERM", "maxScore", 40);
+                "name", "Midterm", "type", "MIDTERM", "maxScore", 40);
 
         ResponseEntity<Map> resp = restTemplate.exchange(
-                "/api/v1/mark-columns",
+                "/api/v1/modules/1/columns",
                 HttpMethod.POST,
                 withToken(facilitatorToken, body),
                 Map.class);
