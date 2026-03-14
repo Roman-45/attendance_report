@@ -33,6 +33,11 @@ public class AttendanceRecord {
     @Builder.Default
     private Boolean consecutiveAbsentFlag = false;
 
+    /** Set once when the absence-threshold alert has been fired for this student+module. */
+    @Column(name = "threshold_alert_sent", nullable = false)
+    @Builder.Default
+    private Boolean thresholdAlertSent = false;
+
     @Column(name = "recorded_at", nullable = false, updatable = false)
     private OffsetDateTime recordedAt;
 

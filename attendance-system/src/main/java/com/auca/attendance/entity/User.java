@@ -44,6 +44,10 @@ public class User implements UserDetails {
     @Column(name = "updated_at", nullable = false)
     private OffsetDateTime updatedAt;
 
+    @Column(name = "mfa_enabled", nullable = false)
+    @Builder.Default
+    private Boolean mfaEnabled = false;
+
     @PrePersist
     protected void onCreate() {
         createdAt = OffsetDateTime.now();

@@ -1,17 +1,16 @@
 package com.auca.attendance.controller;
 
-import com.auca.attendance.dto.request.ForgotPasswordRequest;
-import com.auca.attendance.dto.request.LoginRequest;
-import com.auca.attendance.dto.request.RefreshTokenRequest;
-import com.auca.attendance.dto.request.ResetPasswordRequest;
+import com.auca.attendance.dto.request.*;
 import com.auca.attendance.dto.response.ApiResponse;
 import com.auca.attendance.dto.response.AuthResponse;
 import com.auca.attendance.entity.User;
 import com.auca.attendance.service.AuthService;
+import com.auca.attendance.service.MfaService;
 import com.auca.attendance.service.PasswordResetService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
@@ -22,6 +21,7 @@ public class AuthController {
 
     private final AuthService authService;
     private final PasswordResetService passwordResetService;
+    private final MfaService mfaService;
 
     /** Standard email + password login. Returns access token + refresh token. */
     @PostMapping("/login")
@@ -61,6 +61,50 @@ public class AuthController {
             @Valid @RequestBody ResetPasswordRequest request) {
         passwordResetService.resetPassword(request);
         return ResponseEntity.ok(ApiResponse.success("Password updated successfully", null));
+    }
+
+    /**
+     * Step 2 of login when MFA is enabled: submit the 6-digit OTP received by email.
+     * Returns full access + refresh tokens on success.
+     */
+    @PostMapping("/verify-mfa")
+    public ResponseEntity<ApiResponse<AuthResponse>> verifyMfa(
+            @Valid @RequestBody VerifyMfaRequest request) {
+        return ResponseEntity.ok(ApiResponse.success(authService.verifyMfa(request)));
+    }
+
+    /**
+     * Initiate enabling MFA: sends a confirmation OTP to the authenticated user's email.
+     */
+    @PostMapping("/mfa/enable")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<ApiResponse<Void>> initMfaEnable(
+            @AuthenticationPrincipal User user) {
+        mfaService.sendEnableOtp(user);
+        return ResponseEntity.ok(ApiResponse.success(
+                "OTP sent to " + user.getEmail() + ". Call /auth/mfa/confirm with the code.", null));
+    }
+
+    /**
+     * Confirm enabling MFA: validates the OTP and sets mfa_enabled=true.
+     */
+    @PostMapping("/mfa/confirm")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<ApiResponse<Void>> confirmMfaEnable(
+            @AuthenticationPrincipal User user,
+            @Valid @RequestBody VerifyMfaRequest request) {
+        mfaService.enableMfa(user, request.getOtp());
+        return ResponseEntity.ok(ApiResponse.success("Two-factor authentication enabled", null));
+    }
+
+    /**
+     * Disable MFA for the authenticated user.
+     */
+    @PostMapping("/mfa/disable")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<ApiResponse<Void>> disableMfa(@AuthenticationPrincipal User user) {
+        mfaService.disableMfa(user);
+        return ResponseEntity.ok(ApiResponse.success("Two-factor authentication disabled", null));
     }
 
     /**

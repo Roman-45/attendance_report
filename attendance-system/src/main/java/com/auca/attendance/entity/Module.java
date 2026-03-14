@@ -35,6 +35,11 @@ public class Module {
     @Column(name = "end_date")
     private LocalDate endDate;
 
+    /** Percentage of absences that triggers a THRESHOLD_ALERT notification. Default 25%. */
+    @Column(name = "absence_threshold_percent", nullable = false)
+    @Builder.Default
+    private Integer absenceThresholdPercent = 25;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "created_by", nullable = false)
     private User createdBy;

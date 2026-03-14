@@ -30,4 +30,32 @@ public interface AttendanceRecordRepository extends JpaRepository<AttendanceReco
         """)
     long countTotalByStudentAndModule(@Param("studentId") Long studentId,
                                       @Param("moduleId") Long moduleId);
+
+    /**
+     * Returns true if a threshold alert has already been fired for this student+module.
+     * Used to prevent duplicate alerts.
+     */
+    @Query("""
+        SELECT COUNT(r) > 0 FROM AttendanceRecord r
+        WHERE r.student.id = :studentId
+          AND r.session.module.id = :moduleId
+          AND r.thresholdAlertSent = true
+        """)
+    boolean thresholdAlertAlreadySent(@Param("studentId") Long studentId,
+                                      @Param("moduleId") Long moduleId);
+
+    /**
+     * Finds the most recent attendance record for a student in a module,
+     * used to stamp thresholdAlertSent=true on the triggering record.
+     */
+    @Query("""
+        SELECT r FROM AttendanceRecord r
+        WHERE r.student.id = :studentId
+          AND r.session.module.id = :moduleId
+        ORDER BY r.session.sessionDate DESC, r.session.startTime DESC
+        LIMIT 1
+        """)
+    Optional<AttendanceRecord> findLatestByStudentAndModule(
+            @Param("studentId") Long studentId,
+            @Param("moduleId") Long moduleId);
 }

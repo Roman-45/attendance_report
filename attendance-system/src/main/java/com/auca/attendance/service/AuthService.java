@@ -2,6 +2,7 @@ package com.auca.attendance.service;
 
 import com.auca.attendance.dto.request.LoginRequest;
 import com.auca.attendance.dto.request.RefreshTokenRequest;
+import com.auca.attendance.dto.request.VerifyMfaRequest;
 import com.auca.attendance.dto.response.AuthResponse;
 import com.auca.attendance.entity.RefreshToken;
 import com.auca.attendance.entity.User;
@@ -21,7 +22,13 @@ public class AuthService {
     private final JwtService jwtService;
     private final AuthenticationManager authenticationManager;
     private final RefreshTokenService refreshTokenService;
+    private final MfaService mfaService;
 
+    /**
+     * Step 1 of login.
+     * - If MFA is disabled → return full tokens immediately.
+     * - If MFA is enabled  → send OTP email, return mfaRequired=true (no tokens yet).
+     */
     @Transactional
     public AuthResponse login(LoginRequest request) {
         authenticationManager.authenticate(
@@ -29,6 +36,34 @@ public class AuthService {
         );
 
         User user = userRepository.findByEmail(request.getEmail()).orElseThrow();
+
+        if (Boolean.TRUE.equals(user.getMfaEnabled())) {
+            mfaService.sendLoginOtp(user);
+            return AuthResponse.builder()
+                    .userId(user.getId())
+                    .email(user.getEmail())
+                    .mfaRequired(true)
+                    .build();
+        }
+
+        String accessToken = jwtService.generateToken(user);
+        RefreshToken refreshToken = refreshTokenService.createRefreshToken(user);
+
+        return buildAuthResponse(user, accessToken, refreshToken.getToken());
+    }
+
+    /**
+     * Step 2 of login when MFA is enabled.
+     * Validates the OTP and returns full tokens.
+     */
+    @Transactional
+    public AuthResponse verifyMfa(VerifyMfaRequest request) {
+        User user = userRepository.findByEmail(request.getEmail())
+                .orElseThrow(() -> new IllegalArgumentException("Invalid credentials"));
+
+        if (!mfaService.verifyOtp(user, request.getOtp())) {
+            throw new IllegalArgumentException("Invalid or expired OTP");
+        }
 
         String accessToken = jwtService.generateToken(user);
         RefreshToken refreshToken = refreshTokenService.createRefreshToken(user);
