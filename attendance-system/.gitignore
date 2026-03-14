@@ -21,3 +21,6 @@ logs/
 # Environment / secrets
 .env
 application-local.yml
+DB_PASSWORD=0788
+MAIL_USERNAME=your@gmail.com
+MAIL_PASSWORD=your_gmail_app_password

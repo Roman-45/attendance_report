@@ -21,14 +21,17 @@ public class ModuleService {
     private final ModuleRepository moduleRepository;
     private final UserRepository userRepository;
 
+    @Transactional(readOnly = true)
     public List<ModuleResponse> getAll() {
         return moduleRepository.findAll().stream().map(this::toResponse).toList();
     }
 
+    @Transactional(readOnly = true)
     public ModuleResponse getById(Long id) {
         return toResponse(findModule(id));
     }
 
+    @Transactional
     public ModuleResponse create(ModuleRequest request, User currentUser) {
         if (moduleRepository.existsByCode(request.getCode())) {
             throw new ConflictException("Module code already exists: " + request.getCode());
@@ -44,6 +47,7 @@ public class ModuleService {
         return toResponse(moduleRepository.save(module));
     }
 
+    @Transactional
     public ModuleResponse update(Long id, ModuleRequest request) {
         Module module = findModule(id);
         module.setCode(request.getCode());

@@ -1,6 +1,7 @@
 package com.auca.attendance.entity;
 
 import com.auca.attendance.enums.Role;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.*;
 import org.springframework.security.core.GrantedAuthority;
@@ -29,6 +30,7 @@ public class User implements UserDetails {
     @Column(nullable = false, unique = true, length = 150)
     private String email;
 
+    @JsonIgnore
     @Column(nullable = false)
     private String password;
 
@@ -53,6 +55,7 @@ public class User implements UserDetails {
         updatedAt = OffsetDateTime.now();
     }
 
+    @JsonIgnore
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
         return List.of(new SimpleGrantedAuthority("ROLE_" + role.name()));
@@ -63,15 +66,19 @@ public class User implements UserDetails {
         return email;
     }
 
+    @JsonIgnore
     @Override
     public boolean isAccountNonExpired() { return true; }
 
+    @JsonIgnore
     @Override
     public boolean isAccountNonLocked() { return true; }
 
+    @JsonIgnore
     @Override
     public boolean isCredentialsNonExpired() { return true; }
 
+    @JsonIgnore
     @Override
     public boolean isEnabled() { return true; }
 }

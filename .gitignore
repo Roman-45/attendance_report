@@ -1,0 +1,7 @@
+.env
+*.env
+application-local.yml
+
+# Local config with secrets - never commit
+application-local.yml
+**/application-local.yml

@@ -2,6 +2,8 @@ package com.auca.attendance.service;
 
 import com.auca.attendance.dto.request.MarkColumnRequest;
 import com.auca.attendance.dto.request.MarkEntryRequest;
+import com.auca.attendance.dto.response.MarkColumnResponse;
+import com.auca.attendance.dto.response.MarkEntryResponse;
 import com.auca.attendance.entity.MarkColumn;
 import com.auca.attendance.entity.MarkEntry;
 import com.auca.attendance.entity.Student;
@@ -24,11 +26,14 @@ public class MarkService {
     private final ModuleRepository moduleRepo;
     private final StudentRepository studentRepo;
 
-    public List<MarkColumn> getColumns(Long moduleId) {
-        return columnRepo.findByModuleId(moduleId);
+    @Transactional(readOnly = true)
+    public List<MarkColumnResponse> getColumns(Long moduleId) {
+        return columnRepo.findByModuleId(moduleId)
+                .stream().map(this::toColumnResponse).toList();
     }
 
-    public MarkColumn createColumn(Long moduleId, MarkColumnRequest request, User currentUser) {
+    @Transactional
+    public MarkColumnResponse createColumn(Long moduleId, MarkColumnRequest request, User currentUser) {
         var module = moduleRepo.findById(moduleId)
                 .orElseThrow(() -> new ResourceNotFoundException("Module not found: " + moduleId));
 
@@ -43,7 +48,7 @@ public class MarkService {
                 .maxScore(request.getMaxScore())
                 .createdBy(currentUser)
                 .build();
-        return columnRepo.save(column);
+        return toColumnResponse(columnRepo.save(column));
     }
 
     public void deleteColumn(Long columnId) {
@@ -53,15 +58,17 @@ public class MarkService {
         columnRepo.deleteById(columnId);
     }
 
-    public List<MarkEntry> getMarks(Long moduleId) {
+    @Transactional(readOnly = true)
+    public List<MarkEntryResponse> getMarks(Long moduleId) {
         List<Long> columnIds = columnRepo.findByModuleId(moduleId)
                 .stream().map(MarkColumn::getId).toList();
-        return entryRepo.findByColumnIdIn(columnIds);
+        return entryRepo.findByColumnIdIn(columnIds)
+                .stream().map(this::toEntryResponse).toList();
     }
 
     @Transactional
-    public List<MarkEntry> submitMarks(Long moduleId, Long columnId,
-                                        List<MarkEntryRequest> requests, User currentUser) {
+    public List<MarkEntryResponse> submitMarks(Long moduleId, Long columnId,
+                                               List<MarkEntryRequest> requests, User currentUser) {
         MarkColumn column = columnRepo.findById(columnId)
                 .orElseThrow(() -> new ResourceNotFoundException("Column not found: " + columnId));
 
@@ -74,15 +81,46 @@ public class MarkService {
 
             entry.setScore(req.getScore());
             entry.setEnteredBy(currentUser);
-            return entryRepo.save(entry);
+            return toEntryResponse(entryRepo.save(entry));
         }).toList();
     }
 
-    public MarkEntry updateMark(Long entryId, MarkEntryRequest request, User currentUser) {
+    @Transactional
+    public MarkEntryResponse updateMark(Long entryId, MarkEntryRequest request, User currentUser) {
         MarkEntry entry = entryRepo.findById(entryId)
                 .orElseThrow(() -> new ResourceNotFoundException("Mark entry not found: " + entryId));
         entry.setScore(request.getScore());
         entry.setEnteredBy(currentUser);
-        return entryRepo.save(entry);
+        return toEntryResponse(entryRepo.save(entry));
+    }
+
+    // ─── Mappers ────────────────────────────────────────────────────────────
+    private MarkColumnResponse toColumnResponse(MarkColumn c) {
+        return MarkColumnResponse.builder()
+                .id(c.getId())
+                .moduleId(c.getModule().getId())
+                .moduleName(c.getModule().getName())
+                .name(c.getName())
+                .type(c.getType())
+                .maxScore(c.getMaxScore())
+                .createdBy(c.getCreatedBy().getName())
+                .createdAt(c.getCreatedAt())
+                .build();
+    }
+
+    private MarkEntryResponse toEntryResponse(MarkEntry e) {
+        return MarkEntryResponse.builder()
+                .id(e.getId())
+                .columnId(e.getColumn().getId())
+                .columnName(e.getColumn().getName())
+                .columnType(e.getColumn().getType())
+                .maxScore(e.getColumn().getMaxScore())
+                .studentId(e.getStudent().getId())
+                .studentName(e.getStudent().getName())
+                .studentCode(e.getStudent().getStudentId())
+                .score(e.getScore())
+                .enteredBy(e.getEnteredBy().getName())
+                .enteredAt(e.getEnteredAt())
+                .build();
     }
 }

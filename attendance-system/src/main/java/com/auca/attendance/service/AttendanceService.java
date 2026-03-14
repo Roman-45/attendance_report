@@ -2,10 +2,13 @@ package com.auca.attendance.service;
 
 import com.auca.attendance.dto.request.AttendanceRecordRequest;
 import com.auca.attendance.dto.request.SessionRequest;
+import com.auca.attendance.dto.response.AttendanceRecordResponse;
+import com.auca.attendance.dto.response.SessionResponse;
 import com.auca.attendance.entity.AttendanceRecord;
 import com.auca.attendance.entity.AttendanceSession;
 import com.auca.attendance.entity.Student;
 import com.auca.attendance.entity.User;
+import com.auca.attendance.exception.ConflictException;
 import com.auca.attendance.exception.ResourceNotFoundException;
 import com.auca.attendance.repository.*;
 import lombok.RequiredArgsConstructor;
@@ -24,8 +27,10 @@ public class AttendanceService {
     private final ModuleRepository moduleRepo;
     private final StudentRepository studentRepo;
     private final AbsenceDetectionService absenceDetectionService;
+    private final EnrollmentRepository enrollmentRepo;
 
-    public AttendanceSession createSession(Long moduleId, SessionRequest request, User currentUser) {
+    @Transactional
+    public SessionResponse createSession(Long moduleId, SessionRequest request, User currentUser) {
         var module = moduleRepo.findById(moduleId)
                 .orElseThrow(() -> new ResourceNotFoundException("Module not found: " + moduleId));
 
@@ -38,25 +43,37 @@ public class AttendanceService {
                 .createdBy(currentUser)
                 .build();
 
-        return sessionRepo.save(session);
+        return toSessionResponse(sessionRepo.save(session));
     }
 
-    public List<AttendanceSession> getSessions(Long moduleId) {
-        return sessionRepo.findByModuleIdOrderBySessionDateDescStartTimeDesc(moduleId);
+    @Transactional(readOnly = true)
+    public List<SessionResponse> getSessions(Long moduleId) {
+        return sessionRepo.findByModuleIdOrderBySessionDateDescStartTimeDesc(moduleId)
+                .stream().map(this::toSessionResponse).toList();
     }
 
-    public List<AttendanceRecord> getRecords(Long sessionId) {
-        return recordRepo.findBySessionId(sessionId);
+    @Transactional(readOnly = true)
+    public List<AttendanceRecordResponse> getRecords(Long sessionId) {
+        return recordRepo.findBySessionId(sessionId)
+                .stream().map(this::toRecordResponse).toList();
     }
 
     @Transactional
-    public List<AttendanceRecord> submitRecords(Long sessionId, List<AttendanceRecordRequest> requests) {
+    public List<AttendanceRecordResponse> submitRecords(Long sessionId, List<AttendanceRecordRequest> requests) {
         AttendanceSession session = sessionRepo.findById(sessionId)
                 .orElseThrow(() -> new ResourceNotFoundException("Session not found: " + sessionId));
 
-        List<AttendanceRecord> saved = requests.stream().map(req -> {
+        Long moduleId = session.getModule().getId();
+
+        List<AttendanceRecordResponse> saved = requests.stream().map(req -> {
             Student student = studentRepo.findById(req.getStudentId())
                     .orElseThrow(() -> new ResourceNotFoundException("Student not found: " + req.getStudentId()));
+
+            // Enforce enrollment — student must be enrolled in the module
+            if (!enrollmentRepo.existsByStudentIdAndModuleId(req.getStudentId(), moduleId)) {
+                throw new ConflictException(
+                        "Student " + student.getStudentId() + " is not enrolled in this module");
+            }
 
             AttendanceRecord record = recordRepo
                     .findBySessionIdAndStudentId(sessionId, req.getStudentId())
@@ -64,10 +81,9 @@ public class AttendanceService {
 
             record.setStatus(req.getStatus());
             record.setNotes(req.getNotes());
-            return recordRepo.save(record);
+            return toRecordResponse(recordRepo.save(record));
         }).toList();
 
-        Long moduleId = session.getModule().getId();
         requests.forEach(req ->
                 absenceDetectionService.checkAndFlag(req.getStudentId(), moduleId));
 
@@ -75,29 +91,73 @@ public class AttendanceService {
     }
 
     @Transactional
-    public AttendanceRecord correctRecord(Long recordId, AttendanceRecordRequest request) {
+    public AttendanceRecordResponse correctRecord(Long recordId, AttendanceRecordRequest request) {
         AttendanceRecord record = recordRepo.findById(recordId)
                 .orElseThrow(() -> new ResourceNotFoundException("Record not found: " + recordId));
         record.setStatus(request.getStatus());
         record.setNotes(request.getNotes());
-        return recordRepo.save(record);
+        return toRecordResponse(recordRepo.save(record));
     }
 
-    public List<AttendanceRecord> getStudentHistory(Long studentId) {
-        return recordRepo.findByStudentId(studentId);
+    @Transactional(readOnly = true)
+    public List<AttendanceRecordResponse> getStudentHistory(Long studentId) {
+        return recordRepo.findByStudentId(studentId)
+                .stream().map(this::toRecordResponse).toList();
     }
 
+    @Transactional(readOnly = true)
     public Map<String, Object> getModuleSummary(Long moduleId) {
-        List<AttendanceRecord> all = recordRepo.findBySessionId(moduleId);
-        long total = all.size();
-        long absences = all.stream().filter(r -> "ABSENT".equals(r.getStatus())).count();
-        long flagged = all.stream().filter(r -> Boolean.TRUE.equals(r.getConsecutiveAbsentFlag())).count();
+        List<AttendanceSession> sessions = sessionRepo
+                .findByModuleIdOrderBySessionDateDescStartTimeDesc(moduleId);
+        List<Long> sessionIds = sessions.stream().map(AttendanceSession::getId).toList();
+
+        long total = 0;
+        long absences = 0;
+        long flagged = 0;
+
+        for (Long sid : sessionIds) {
+            List<AttendanceRecord> records = recordRepo.findBySessionId(sid);
+            total += records.size();
+            absences += records.stream().filter(r -> "ABSENT".equals(r.getStatus())).count();
+            flagged += records.stream().filter(r -> Boolean.TRUE.equals(r.getConsecutiveAbsentFlag())).count();
+        }
 
         return Map.of(
+                "totalSessions", sessions.size(),
                 "totalRecords", total,
                 "absences", absences,
                 "flagged", flagged,
-                "attendanceRate", total > 0 ? ((double)(total - absences) / total * 100) : 0
+                "attendanceRate", total > 0 ? Math.round(((double)(total - absences) / total * 100) * 10.0) / 10.0 : 0
         );
+    }
+
+    // ─── Mappers ────────────────────────────────────────────────────────────
+    private SessionResponse toSessionResponse(AttendanceSession s) {
+        return SessionResponse.builder()
+                .id(s.getId())
+                .moduleId(s.getModule().getId())
+                .moduleName(s.getModule().getName())
+                .sessionDate(s.getSessionDate())
+                .startTime(s.getStartTime())
+                .endTime(s.getEndTime())
+                .period(s.getPeriod())
+                .createdBy(s.getCreatedBy().getName())
+                .createdAt(s.getCreatedAt())
+                .build();
+    }
+
+    private AttendanceRecordResponse toRecordResponse(AttendanceRecord r) {
+        return AttendanceRecordResponse.builder()
+                .id(r.getId())
+                .sessionId(r.getSession().getId())
+                .sessionDate(r.getSession().getSessionDate())
+                .studentId(r.getStudent().getId())
+                .studentName(r.getStudent().getName())
+                .studentCode(r.getStudent().getStudentId())
+                .status(r.getStatus())
+                .consecutiveAbsentFlag(r.getConsecutiveAbsentFlag())
+                .notes(r.getNotes())
+                .recordedAt(r.getRecordedAt())
+                .build();
     }
 }

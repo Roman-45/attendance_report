@@ -51,6 +51,7 @@ public class StudentService {
         return toResponse(studentRepository.save(student));
     }
 
+    @Transactional
     public StudentResponse update(Long id, StudentRequest request) {
         Student student = studentRepository.findByIdAndDeletedAtIsNull(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Student not found: " + id));
@@ -65,6 +66,7 @@ public class StudentService {
         return toResponse(studentRepository.save(student));
     }
 
+    @Transactional
     public void softDelete(Long id) {
         Student student = studentRepository.findByIdAndDeletedAtIsNull(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Student not found: " + id));

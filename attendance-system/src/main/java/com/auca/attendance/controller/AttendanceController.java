@@ -3,8 +3,8 @@ package com.auca.attendance.controller;
 import com.auca.attendance.dto.request.AttendanceRecordRequest;
 import com.auca.attendance.dto.request.SessionRequest;
 import com.auca.attendance.dto.response.ApiResponse;
-import com.auca.attendance.entity.AttendanceRecord;
-import com.auca.attendance.entity.AttendanceSession;
+import com.auca.attendance.dto.response.AttendanceRecordResponse;
+import com.auca.attendance.dto.response.SessionResponse;
 import com.auca.attendance.entity.User;
 import com.auca.attendance.service.AttendanceService;
 import jakarta.validation.Valid;
@@ -27,7 +27,7 @@ public class AttendanceController {
 
     @PostMapping("/modules/{moduleId}/sessions")
     @PreAuthorize("hasRole('FACILITATOR')")
-    public ResponseEntity<ApiResponse<AttendanceSession>> createSession(
+    public ResponseEntity<ApiResponse<SessionResponse>> createSession(
             @PathVariable Long moduleId,
             @Valid @RequestBody SessionRequest request,
             @AuthenticationPrincipal User currentUser) {
@@ -37,18 +37,18 @@ public class AttendanceController {
     }
 
     @GetMapping("/modules/{moduleId}/sessions")
-    public ResponseEntity<ApiResponse<List<AttendanceSession>>> getSessions(@PathVariable Long moduleId) {
+    public ResponseEntity<ApiResponse<List<SessionResponse>>> getSessions(@PathVariable Long moduleId) {
         return ResponseEntity.ok(ApiResponse.success(attendanceService.getSessions(moduleId)));
     }
 
     @GetMapping("/sessions/{sessionId}/records")
-    public ResponseEntity<ApiResponse<List<AttendanceRecord>>> getRecords(@PathVariable Long sessionId) {
+    public ResponseEntity<ApiResponse<List<AttendanceRecordResponse>>> getRecords(@PathVariable Long sessionId) {
         return ResponseEntity.ok(ApiResponse.success(attendanceService.getRecords(sessionId)));
     }
 
     @PostMapping("/sessions/{sessionId}/records")
     @PreAuthorize("hasRole('FACILITATOR')")
-    public ResponseEntity<ApiResponse<List<AttendanceRecord>>> submitRecords(
+    public ResponseEntity<ApiResponse<List<AttendanceRecordResponse>>> submitRecords(
             @PathVariable Long sessionId,
             @Valid @RequestBody List<AttendanceRecordRequest> requests) {
         return ResponseEntity.ok(ApiResponse.success("Attendance submitted",
@@ -57,7 +57,7 @@ public class AttendanceController {
 
     @PatchMapping("/records/{recordId}")
     @PreAuthorize("hasAnyRole('FACILITATOR','ADMIN')")
-    public ResponseEntity<ApiResponse<AttendanceRecord>> correctRecord(
+    public ResponseEntity<ApiResponse<AttendanceRecordResponse>> correctRecord(
             @PathVariable Long recordId,
             @Valid @RequestBody AttendanceRecordRequest request) {
         return ResponseEntity.ok(ApiResponse.success("Record updated",
@@ -65,7 +65,7 @@ public class AttendanceController {
     }
 
     @GetMapping("/students/{studentId}/attendance")
-    public ResponseEntity<ApiResponse<List<AttendanceRecord>>> getStudentHistory(
+    public ResponseEntity<ApiResponse<List<AttendanceRecordResponse>>> getStudentHistory(
             @PathVariable Long studentId) {
         return ResponseEntity.ok(ApiResponse.success(attendanceService.getStudentHistory(studentId)));
     }

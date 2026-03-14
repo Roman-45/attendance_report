@@ -1,0 +1,643 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>AUCA Attendance System — UML Diagrams</title>
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background: #0f172a;
+      color: #e2e8f0;
+      min-height: 100vh;
+    }
+    header {
+      background: linear-gradient(135deg, #1e3a5f 0%, #0f172a 100%);
+      padding: 32px 40px;
+      border-bottom: 2px solid #1e40af;
+    }
+    header h1 { font-size: 28px; color: #60a5fa; letter-spacing: 0.5px; }
+    header p  { color: #94a3b8; margin-top: 6px; font-size: 14px; }
+
+    nav {
+      display: flex; gap: 8px; padding: 20px 40px;
+      background: #0f172a; border-bottom: 1px solid #1e293b;
+      flex-wrap: wrap;
+    }
+    nav button {
+      padding: 8px 20px; border-radius: 9999px; border: none; cursor: pointer;
+      font-size: 13px; font-weight: 600; transition: all 0.2s;
+      background: #1e293b; color: #94a3b8;
+    }
+    nav button.active, nav button:hover {
+      background: #1e40af; color: #fff;
+    }
+
+    .tab { display: none; padding: 40px; }
+    .tab.active { display: block; }
+
+    .diagram-card {
+      background: #1e293b;
+      border: 1px solid #334155;
+      border-radius: 16px;
+      padding: 32px;
+      margin-bottom: 40px;
+    }
+    .diagram-card h2 {
+      font-size: 18px; color: #60a5fa;
+      margin-bottom: 6px; display: flex; align-items: center; gap: 10px;
+    }
+    .diagram-card p.desc {
+      color: #64748b; font-size: 13px; margin-bottom: 24px; line-height: 1.6;
+    }
+    .mermaid {
+      background: #0f172a;
+      border-radius: 12px;
+      padding: 24px;
+      overflow-x: auto;
+      display: flex;
+      justify-content: center;
+    }
+
+    .legend {
+      display: flex; gap: 16px; flex-wrap: wrap; margin-top: 20px;
+    }
+    .legend-item {
+      display: flex; align-items: center; gap: 6px;
+      font-size: 12px; color: #94a3b8;
+    }
+    .legend-dot {
+      width: 12px; height: 12px; border-radius: 50%;
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>🎓 AUCA Attendance &amp; Marks Management System</h1>
+  <p>System Architecture Diagrams — Spring Boot + React | PostgreSQL 16</p>
+</header>
+
+<nav>
+  <button class="active" onclick="showTab('class')">📦 Class Diagram</button>
+  <button onclick="showTab('usecase')">👤 Use Case Diagram</button>
+  <button onclick="showTab('dfd')">🔄 Data Flow Diagram</button>
+  <button onclick="showTab('sequence')">⏱ Sequence Diagram</button>
+</nav>
+
+<!-- ─── CLASS DIAGRAM ─────────────────────────────────────────────── -->
+<div id="class" class="tab active">
+  <div class="diagram-card">
+    <h2>📦 Class Diagram</h2>
+    <p class="desc">Shows all JPA entities, their fields, and the relationships between them in the system.</p>
+    <div class="mermaid">
+classDiagram
+    direction TB
+
+    class User {
+        +Long id
+        +String name
+        +String email
+        +String password
+        +Role role
+        +OffsetDateTime createdAt
+        +getAuthorities()
+    }
+
+    class Student {
+        +Long id
+        +String studentId
+        +String name
+        +String email
+        +Integer cohortYear
+        +String program
+        +String phone
+        +OffsetDateTime deletedAt
+    }
+
+    class Module {
+        +Long id
+        +String code
+        +String name
+        +String description
+        +LocalDate startDate
+        +LocalDate endDate
+    }
+
+    class AttendanceSession {
+        +Long id
+        +LocalDate sessionDate
+        +LocalTime startTime
+        +LocalTime endTime
+        +String period
+        +OffsetDateTime createdAt
+    }
+
+    class AttendanceRecord {
+        +Long id
+        +String status
+        +Boolean consecutiveAbsentFlag
+        +String notes
+        +OffsetDateTime recordedAt
+    }
+
+    class MarkColumn {
+        +Long id
+        +String name
+        +String type
+        +BigDecimal maxScore
+        +OffsetDateTime createdAt
+    }
+
+    class MarkEntry {
+        +Long id
+        +BigDecimal score
+        +OffsetDateTime enteredAt
+    }
+
+    class Notification {
+        +Long id
+        +String type
+        +String title
+        +String message
+        +Boolean isRead
+        +OffsetDateTime createdAt
+    }
+
+    class Role {
+        <<enumeration>>
+        ADMIN
+        FACILITATOR
+        INSTRUCTOR
+    }
+
+    class AttendanceStatus {
+        <<enumeration>>
+        PRESENT
+        ABSENT
+        LATE
+        EXCUSED
+    }
+
+    class MarkType {
+        <<enumeration>>
+        MIDTERM
+        FINAL
+        QUIZ
+        CUSTOM
+    }
+
+    User --> Role : has
+    AttendanceRecord --> AttendanceStatus : uses
+    MarkColumn --> MarkType : uses
+
+    User "1" --> "0..*" Module : creates
+    User "0..*" -- "0..*" Module : assigned as instructor
+    User "1" --> "0..*" AttendanceSession : creates
+    User "1" --> "0..*" MarkColumn : creates
+    User "1" --> "0..*" MarkEntry : enters
+    User "1" --> "0..*" Notification : receives
+
+    Module "1" --> "0..*" AttendanceSession : has
+    Module "1" --> "0..*" MarkColumn : has
+
+    AttendanceSession "1" --> "0..*" AttendanceRecord : contains
+
+    Student "1" --> "0..*" AttendanceRecord : tracked in
+    Student "1" --> "0..*" MarkEntry : scored in
+
+    MarkColumn "1" --> "0..*" MarkEntry : holds
+
+    Notification "0..1" --> Student : references
+    Notification "0..1" --> Module : references
+    </div>
+  </div>
+</div>
+
+<!-- ─── USE CASE DIAGRAM ──────────────────────────────────────────── -->
+<div id="usecase" class="tab">
+  <div class="diagram-card">
+    <h2>👤 Use Case Diagram</h2>
+    <p class="desc">Illustrates what each actor (Admin, Facilitator, Instructor) can do in the system.</p>
+    <div class="mermaid">
+flowchart LR
+    Admin(["👤 Admin"])
+    Facilitator(["👤 Facilitator"])
+    Instructor(["👤 Instructor"])
+
+    subgraph System["🎓 AUCA Attendance System"]
+
+      subgraph AuthGroup["Authentication"]
+        UC0["🔐 Login to System"]
+        UC1["👁 View Own Profile"]
+      end
+
+      subgraph UserMgmt["User & Student Management"]
+        UC2["➕ Create Users"]
+        UC3["👨‍🎓 Manage Students"]
+        UC4["📚 Manage Modules"]
+        UC5["🔗 Assign Instructors to Modules"]
+      end
+
+      subgraph AttendGroup["Attendance Management"]
+        UC6["📅 Create Attendance Session"]
+        UC7["✅ Submit Attendance Records"]
+        UC8["✏️ Correct Attendance Record"]
+        UC9["📋 View Attendance History"]
+        UC10["📊 View Module Attendance Summary"]
+      end
+
+      subgraph MarksGroup["Marks Management"]
+        UC11["📝 Create Mark Columns"]
+        UC12["🔢 Submit Student Marks"]
+        UC13["✏️ Edit Mark Entry"]
+        UC14["👁 View Module Marks"]
+      end
+
+      subgraph ReportGroup["Reports"]
+        UC15["📥 Download Attendance Report (Excel/PDF)"]
+        UC16["📥 Download Marks Report (Excel/PDF)"]
+      end
+
+      subgraph NotifGroup["Notifications"]
+        UC17["🔔 Receive Consecutive Absence Alert"]
+        UC18["✔️ Mark Notification as Read"]
+      end
+    end
+
+    Admin --> UC0
+    Admin --> UC1
+    Admin --> UC2
+    Admin --> UC3
+    Admin --> UC4
+    Admin --> UC5
+    Admin --> UC8
+    Admin --> UC9
+    Admin --> UC10
+    Admin --> UC14
+    Admin --> UC15
+    Admin --> UC16
+    Admin --> UC17
+    Admin --> UC18
+
+    Facilitator --> UC0
+    Facilitator --> UC1
+    Facilitator --> UC6
+    Facilitator --> UC7
+    Facilitator --> UC8
+    Facilitator --> UC9
+    Facilitator --> UC10
+    Facilitator --> UC15
+
+    Instructor --> UC0
+    Instructor --> UC1
+    Instructor --> UC11
+    Instructor --> UC12
+    Instructor --> UC13
+    Instructor --> UC14
+    Instructor --> UC16
+
+    style Admin      fill:#1e40af,color:#fff,stroke:#3b82f6
+    style Facilitator fill:#065f46,color:#fff,stroke:#10b981
+    style Instructor  fill:#7c2d12,color:#fff,stroke:#f97316
+
+    style AuthGroup   fill:#1e293b,stroke:#475569,color:#94a3b8
+    style UserMgmt    fill:#1e293b,stroke:#475569,color:#94a3b8
+    style AttendGroup fill:#1e293b,stroke:#475569,color:#94a3b8
+    style MarksGroup  fill:#1e293b,stroke:#475569,color:#94a3b8
+    style ReportGroup fill:#1e293b,stroke:#475569,color:#94a3b8
+    style NotifGroup  fill:#1e293b,stroke:#475569,color:#94a3b8
+    style System      fill:#0f172a,stroke:#334155,color:#60a5fa
+    </div>
+    <div class="legend">
+      <div class="legend-item"><div class="legend-dot" style="background:#1e40af"></div> Admin — Full access</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#065f46"></div> Facilitator — Attendance focus</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#7c2d12"></div> Instructor — Marks focus</div>
+    </div>
+  </div>
+</div>
+
+<!-- ─── DATA FLOW DIAGRAM ─────────────────────────────────────────── -->
+<div id="dfd" class="tab">
+  <div class="diagram-card">
+    <h2>🔄 Data Flow Diagram (Level 1)</h2>
+    <p class="desc">Shows how data moves between actors, processes, and data stores in the system.</p>
+    <div class="mermaid">
+flowchart TD
+    %% External Entities
+    ADM(["👤 Admin"])
+    FAC(["👤 Facilitator"])
+    INS(["👤 Instructor"])
+    EMAIL(["📧 Gmail SMTP"])
+
+    %% Processes
+    P1["⚙️ P1 — Authentication"]
+    P2["⚙️ P2 — User and Student Management"]
+    P3["⚙️ P3 — Module Management"]
+    P4["⚙️ P4 — Attendance Processing"]
+    P5["⚙️ P5 — Absence Detection Engine"]
+    P6["⚙️ P6 — Marks Processing"]
+    P7["⚙️ P7 — Report Generation"]
+    P8["⚙️ P8 — Notification Service"]
+
+    %% Data Stores
+    DS1[("🗄️ users")]
+    DS2[("🗄️ students")]
+    DS3[("🗄️ modules + module_instructors")]
+    DS4[("🗄️ attendance_sessions + records")]
+    DS5[("🗄️ mark_columns + mark_entries")]
+    DS6[("🗄️ notifications")]
+
+    %% Auth flows
+    ADM -- "email + password" --> P1
+    FAC -- "email + password" --> P1
+    INS -- "email + password" --> P1
+    P1 -- "read user" --> DS1
+    P1 -- "JWT Token" --> ADM
+    P1 -- "JWT Token" --> FAC
+    P1 -- "JWT Token" --> INS
+
+    %% User & Student Mgmt
+    ADM -- "create/update/delete students & users" --> P2
+    P2 -- "write" --> DS1
+    P2 -- "write" --> DS2
+    P2 -- "student list" --> ADM
+
+    %% Module Mgmt
+    ADM -- "create module, assign instructor" --> P3
+    P3 -- "write" --> DS3
+    P3 -- "module list" --> ADM
+    P3 -- "module list" --> FAC
+    P3 -- "module list" --> INS
+
+    %% Attendance
+    FAC -- "create session + submit records" --> P4
+    P4 -- "read students" --> DS2
+    P4 -- "read modules" --> DS3
+    P4 -- "write sessions & records" --> DS4
+    P4 -- "attendance data" --> FAC
+    P4 -- "trigger check" --> P5
+
+    %% Absence Detection
+    P5 -- "read last 2 sessions" --> DS4
+    P5 -- "flag record" --> DS4
+    P5 -- "trigger alert" --> P8
+
+    %% Marks
+    INS -- "create columns + submit marks" --> P6
+    P6 -- "read students" --> DS2
+    P6 -- "read modules" --> DS3
+    P6 -- "write" --> DS5
+    P6 -- "marks data" --> INS
+
+    %% Notifications
+    P8 -- "write notification" --> DS6
+    P8 -- "send email" --> EMAIL
+    EMAIL -- "email alert" --> ADM
+    DS6 -- "notification list" --> ADM
+
+    %% Reports
+    ADM -- "request report" --> P7
+    FAC -- "request attendance report" --> P7
+    P7 -- "read" --> DS4
+    P7 -- "read" --> DS5
+    P7 -- "Excel / PDF file" --> ADM
+    P7 -- "Excel / PDF file" --> FAC
+
+    style P1 fill:#1e3a5f,stroke:#3b82f6,color:#fff
+    style P2 fill:#1e3a5f,stroke:#3b82f6,color:#fff
+    style P3 fill:#1e3a5f,stroke:#3b82f6,color:#fff
+    style P4 fill:#1e3a5f,stroke:#3b82f6,color:#fff
+    style P5 fill:#7c2d12,stroke:#f97316,color:#fff
+    style P6 fill:#1e3a5f,stroke:#3b82f6,color:#fff
+    style P7 fill:#1e3a5f,stroke:#3b82f6,color:#fff
+    style P8 fill:#7c2d12,stroke:#f97316,color:#fff
+
+    style DS1 fill:#064e3b,stroke:#10b981,color:#fff
+    style DS2 fill:#064e3b,stroke:#10b981,color:#fff
+    style DS3 fill:#064e3b,stroke:#10b981,color:#fff
+    style DS4 fill:#064e3b,stroke:#10b981,color:#fff
+    style DS5 fill:#064e3b,stroke:#10b981,color:#fff
+    style DS6 fill:#064e3b,stroke:#10b981,color:#fff
+
+    style ADM   fill:#1e40af,stroke:#3b82f6,color:#fff
+    style FAC   fill:#065f46,stroke:#10b981,color:#fff
+    style INS   fill:#7c2d12,stroke:#f97316,color:#fff
+    style EMAIL fill:#4c1d95,stroke:#8b5cf6,color:#fff
+    </div>
+    <div class="legend">
+      <div class="legend-item"><div class="legend-dot" style="background:#1e3a5f;border:1px solid #3b82f6"></div> Process</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#064e3b;border:1px solid #10b981"></div> Data Store (PostgreSQL)</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#7c2d12;border:1px solid #f97316"></div> Critical Process (absence detection)</div>
+    </div>
+  </div>
+</div>
+
+<!-- ─── SEQUENCE DIAGRAM ──────────────────────────────────────────── -->
+<div id="sequence" class="tab">
+
+  <div class="diagram-card">
+    <h2>⏱ Sequence Diagram 1 — Login &amp; JWT Auth Flow</h2>
+    <p class="desc">Shows the full JWT authentication handshake from login to protected resource access.</p>
+    <div class="mermaid">
+sequenceDiagram
+    actor User
+    participant Frontend
+    participant AuthController
+    participant AuthService
+    participant AuthManager as AuthenticationManager
+    participant JwtService
+    participant DB as PostgreSQL
+
+    User->>Frontend: Enter email + password
+    Frontend->>AuthController: POST /api/v1/auth/login
+    AuthController->>AuthService: login(request)
+    AuthService->>AuthManager: authenticate(email, password)
+    AuthManager->>DB: SELECT * FROM users WHERE email=?
+    DB-->>AuthManager: User record
+    AuthManager-->>AuthService: Authentication OK
+
+    AuthService->>DB: findByEmail(email)
+    DB-->>AuthService: User entity
+    AuthService->>JwtService: generateToken(user)
+    JwtService-->>AuthService: JWT (with role claim)
+    AuthService-->>AuthController: AuthResponse {token, name, role}
+    AuthController-->>Frontend: 200 OK {token, userId, name, role}
+    Frontend->>Frontend: Store token in AuthContext
+
+    Note over Frontend,DB: Subsequent Requests
+    User->>Frontend: Navigate to protected page
+    Frontend->>AuthController: GET /api/v1/... + Bearer token
+    AuthController->>AuthController: JwtAuthenticationFilter intercepts
+    AuthController->>JwtService: extractUsername(token)
+    JwtService-->>AuthController: email
+    AuthController->>DB: loadUserByUsername(email)
+    DB-->>AuthController: UserDetails
+    AuthController->>JwtService: isTokenValid(token, userDetails)
+    JwtService-->>AuthController: true
+    AuthController->>AuthController: Set SecurityContextHolder
+    AuthController-->>Frontend: 200 OK + protected data
+    </div>
+  </div>
+
+  <div class="diagram-card">
+    <h2>⏱ Sequence Diagram 2 — Attendance Submission &amp; Absence Detection</h2>
+    <p class="desc">The core business flow: submitting attendance, detecting consecutive absences, and alerting admins.</p>
+    <div class="mermaid">
+sequenceDiagram
+    actor Facilitator
+    participant Frontend
+    participant AttendanceController
+    participant AttendanceService
+    participant AbsenceDetection as AbsenceDetectionService
+    participant SessionRepo
+    participant RecordRepo
+    participant NotificationService
+    participant DB as PostgreSQL
+    participant Email as Gmail SMTP
+
+    Facilitator->>Frontend: Create session (date, time, period)
+    Frontend->>AttendanceController: POST /api/v1/modules/{id}/sessions
+    AttendanceController->>AttendanceService: createSession(moduleId, request, user)
+    AttendanceService->>DB: save AttendanceSession
+    DB-->>AttendanceService: Session saved
+    AttendanceService-->>Frontend: 201 Created — Session
+
+    Facilitator->>Frontend: Submit attendance list [studentId, status]
+    Frontend->>AttendanceController: POST /api/v1/sessions/{id}/records
+    AttendanceController->>AttendanceService: submitRecords(sessionId, records)
+
+    loop For each student record
+        AttendanceService->>RecordRepo: findBySessionIdAndStudentId
+        RecordRepo->>DB: SELECT ...
+        DB-->>RecordRepo: existing or null
+        AttendanceService->>RecordRepo: save(record)
+        RecordRepo->>DB: INSERT / UPDATE attendance_records
+    end
+
+    loop For each student record
+        AttendanceService->>AbsenceDetection: checkAndFlag(studentId, moduleId)
+        AbsenceDetection->>SessionRepo: findTop2ByModuleId (last 2 sessions)
+        SessionRepo->>DB: SELECT ... ORDER BY date DESC LIMIT 2
+        DB-->>AbsenceDetection: [session1, session2]
+        AbsenceDetection->>RecordRepo: findByStudentIdAndSessionIdIn
+        DB-->>AbsenceDetection: [record1, record2]
+
+        alt Both records = ABSENT
+            AbsenceDetection->>RecordRepo: set consecutiveAbsentFlag = true
+            RecordRepo->>DB: UPDATE attendance_records
+            AbsenceDetection->>NotificationService: notifyAdmins(studentId, moduleId) [ASYNC]
+
+            NotificationService->>DB: findAllByRole(ADMIN)
+            DB-->>NotificationService: admin users
+
+            loop For each Admin
+                NotificationService->>DB: INSERT INTO notifications
+                NotificationService->>Email: send alert email
+                Email-->>NotificationService: sent
+            end
+        else Not consecutive
+            AbsenceDetection-->>AttendanceService: no flag
+        end
+    end
+
+    AttendanceService-->>Frontend: 200 OK — records saved
+    Frontend-->>Facilitator: ✅ Attendance submitted
+    </div>
+  </div>
+
+  <div class="diagram-card">
+    <h2>⏱ Sequence Diagram 3 — Mark Submission Flow</h2>
+    <p class="desc">Shows how an Instructor creates mark columns and submits student scores.</p>
+    <div class="mermaid">
+sequenceDiagram
+    actor Instructor
+    participant Frontend
+    participant MarkController
+    participant MarkService
+    participant DB as PostgreSQL
+
+    Instructor->>Frontend: Create mark column (name, type, maxScore)
+    Frontend->>MarkController: POST /api/v1/modules/{id}/columns
+    Note over MarkController: @PreAuthorize("hasRole('INSTRUCTOR')")
+    MarkController->>MarkService: createColumn(moduleId, request, user)
+    MarkService->>DB: existsByModuleIdAndName?
+    DB-->>MarkService: false (unique)
+    MarkService->>DB: INSERT INTO mark_columns
+    DB-->>MarkService: MarkColumn saved
+    MarkService-->>Frontend: 201 Created — MarkColumn
+
+    Instructor->>Frontend: Submit scores [{studentId, score}]
+    Frontend->>MarkController: POST /api/v1/modules/{id}/marks?columnId=X
+    MarkController->>MarkService: submitMarks(moduleId, columnId, entries, user)
+    MarkService->>DB: SELECT mark_column WHERE id=columnId
+    DB-->>MarkService: MarkColumn
+
+    loop For each student entry
+        MarkService->>DB: findByColumnIdAndStudentId
+        DB-->>MarkService: existing entry or null
+        MarkService->>DB: UPSERT mark_entries (score, enteredBy)
+        DB-->>MarkService: MarkEntry saved
+    end
+
+    MarkService-->>Frontend: 200 OK — all entries saved
+    Frontend-->>Instructor: ✅ Marks submitted
+
+    Note over Instructor,DB: Correcting a Mark
+    Instructor->>Frontend: Edit score for student
+    Frontend->>MarkController: PATCH /api/v1/marks/{entryId}
+    MarkController->>MarkService: updateMark(entryId, request, user)
+    MarkService->>DB: UPDATE mark_entries SET score=?
+    DB-->>MarkService: updated
+    MarkService-->>Frontend: 200 OK — Mark updated
+    </div>
+  </div>
+</div>
+
+<script>
+  mermaid.initialize({
+    startOnLoad: true,
+    theme: 'dark',
+    themeVariables: {
+      primaryColor: '#1e3a5f',
+      primaryTextColor: '#e2e8f0',
+      primaryBorderColor: '#3b82f6',
+      lineColor: '#64748b',
+      secondaryColor: '#0f172a',
+      tertiaryColor: '#1e293b',
+      background: '#0f172a',
+      mainBkg: '#1e293b',
+      nodeBorder: '#334155',
+      clusterBkg: '#0f172a',
+      titleColor: '#60a5fa',
+      edgeLabelBackground: '#1e293b',
+      actorBkg: '#1e3a5f',
+      actorBorder: '#3b82f6',
+      actorTextColor: '#e2e8f0',
+      signalColor: '#94a3b8',
+      signalTextColor: '#e2e8f0',
+      labelBoxBkgColor: '#0f172a',
+      labelBoxBorderColor: '#334155',
+      loopTextColor: '#94a3b8',
+      noteBorderColor: '#f59e0b',
+      noteBkgColor: '#292524',
+      noteTextColor: '#e2e8f0',
+      activationBorderColor: '#3b82f6',
+      activationBkgColor: '#1e3a5f',
+      sequenceNumberColor: '#60a5fa',
+    },
+    flowchart: { curve: 'basis', padding: 20 },
+    sequence: { actorMargin: 80, width: 180, height: 60, messageMargin: 40, mirrorActors: false }
+  });
+
+  function showTab(id) {
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('nav button').forEach(b => b.classList.remove('active'));
+    document.getElementById(id).classList.add('active');
+    event.target.classList.add('active');
+  }
+</script>
+</body>
+</html>
