@@ -33,9 +33,19 @@ attendance_report/
 │   └── src/
 │       ├── api/client.ts    # Axios with Bearer token interceptor
 │       ├── context/         # AuthContext
+│       ├── components/layout/   # AppLayout, Sidebar, TopBar (global search), Footer
 │       └── pages/           # Login, Dashboard, Attendance, Marks, Reports
 └── docker-compose.yml       # PostgreSQL 16 + pgAdmin
 ```
+
+## Frontend Layout Shell
+
+Every authenticated route is wrapped by `AppLayout` (`components/layout/AppLayout.tsx`):
+```
+Sidebar (role-based nav) | TopBar (global search + notification bell) | <main> | Footer
+```
+- **Global search (Ctrl+K)** lives entirely in `TopBar.tsx` — searches pages, students, and modules via debounced API calls. Do not add duplicate nav-level search elsewhere.
+- **Dev servers** are configured in `.claude/launch.json` with names `frontend` (port 5173), `backend` (port 8080), `database` (port 5432). Use `preview_start` by name instead of reconstructing commands.
 
 ## Commands
 
@@ -71,6 +81,8 @@ npm run dev        # Dev server on http://localhost:5173
 npm run build      # Production build
 npm run lint       # ESLint
 ```
+
+> **Note:** `tsconfig` has `noUnusedLocals: true` — unused imports are hard errors (TS6133) that block the build. Always remove unused imports before running `tsc --noEmit`.
 
 ## Architecture
 
