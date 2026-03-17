@@ -6,7 +6,9 @@ import com.auca.attendance.dto.response.ApiResponse;
 import com.auca.attendance.dto.response.MarkColumnResponse;
 import com.auca.attendance.dto.response.MarkEntryResponse;
 import com.auca.attendance.entity.User;
+import com.auca.attendance.service.AuditService;
 import com.auca.attendance.service.MarkService;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -23,6 +25,7 @@ import java.util.List;
 public class MarkController {
 
     private final MarkService markService;
+    private final AuditService auditService;
 
     @GetMapping("/modules/{moduleId}/columns")
     @PreAuthorize("hasAnyRole('INSTRUCTOR','ADMIN')")
@@ -35,16 +38,24 @@ public class MarkController {
     public ResponseEntity<ApiResponse<MarkColumnResponse>> createColumn(
             @PathVariable Long moduleId,
             @Valid @RequestBody MarkColumnRequest request,
-            @AuthenticationPrincipal User currentUser) {
+            @AuthenticationPrincipal User currentUser,
+            HttpServletRequest httpRequest) {
+        MarkColumnResponse column = markService.createColumn(moduleId, request, currentUser);
+        auditService.log(currentUser, "CREATE", "MarkColumn", column.getId(),
+                "Created mark column for module " + moduleId, httpRequest.getRemoteAddr());
         return ResponseEntity.status(HttpStatus.CREATED)
-                .body(ApiResponse.success("Column created",
-                        markService.createColumn(moduleId, request, currentUser)));
+                .body(ApiResponse.success("Column created", column));
     }
 
     @DeleteMapping("/columns/{columnId}")
     @PreAuthorize("hasAnyRole('INSTRUCTOR','ADMIN')")
-    public ResponseEntity<ApiResponse<Void>> deleteColumn(@PathVariable Long columnId) {
+    public ResponseEntity<ApiResponse<Void>> deleteColumn(
+            @PathVariable Long columnId,
+            @AuthenticationPrincipal User currentUser,
+            HttpServletRequest httpRequest) {
         markService.deleteColumn(columnId);
+        auditService.log(currentUser, "DELETE", "MarkColumn", columnId,
+                "Deleted mark column", httpRequest.getRemoteAddr());
         return ResponseEntity.ok(ApiResponse.success("Column deleted", null));
     }
 
@@ -60,9 +71,12 @@ public class MarkController {
             @PathVariable Long moduleId,
             @RequestParam Long columnId,
             @Valid @RequestBody List<MarkEntryRequest> requests,
-            @AuthenticationPrincipal User currentUser) {
-        return ResponseEntity.ok(ApiResponse.success("Marks submitted",
-                markService.submitMarks(moduleId, columnId, requests, currentUser)));
+            @AuthenticationPrincipal User currentUser,
+            HttpServletRequest httpRequest) {
+        List<MarkEntryResponse> entries = markService.submitMarks(moduleId, columnId, requests, currentUser);
+        auditService.log(currentUser, "CREATE", "MarkEntry", columnId,
+                "Submitted " + requests.size() + " mark entries for module " + moduleId, httpRequest.getRemoteAddr());
+        return ResponseEntity.ok(ApiResponse.success("Marks submitted", entries));
     }
 
     @PatchMapping("/marks/{entryId}")
@@ -70,8 +84,11 @@ public class MarkController {
     public ResponseEntity<ApiResponse<MarkEntryResponse>> updateMark(
             @PathVariable Long entryId,
             @Valid @RequestBody MarkEntryRequest request,
-            @AuthenticationPrincipal User currentUser) {
-        return ResponseEntity.ok(ApiResponse.success("Mark updated",
-                markService.updateMark(entryId, request, currentUser)));
+            @AuthenticationPrincipal User currentUser,
+            HttpServletRequest httpRequest) {
+        MarkEntryResponse entry = markService.updateMark(entryId, request, currentUser);
+        auditService.log(currentUser, "UPDATE", "MarkEntry", entryId,
+                "Updated mark entry", httpRequest.getRemoteAddr());
+        return ResponseEntity.ok(ApiResponse.success("Mark updated", entry));
     }
 }

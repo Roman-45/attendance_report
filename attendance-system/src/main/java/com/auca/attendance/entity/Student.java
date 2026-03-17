@@ -35,6 +35,18 @@ public class Student {
     @Column(length = 20)
     private String phone;
 
+    @Column(name = "profile_photo_path", length = 500)
+    private String profilePhotoPath;
+
+    /**
+     * Optional link to a User account (role=STUDENT).
+     * Null when the student has no login account yet.
+     * Set by StudentService.create() when createAccount=true.
+     */
+    @OneToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "user_id", unique = true)
+    private User account;
+
     @Column(name = "deleted_at")
     private OffsetDateTime deletedAt;
 

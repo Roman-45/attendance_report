@@ -15,6 +15,7 @@ public class MarkColumnResponse {
     private String name;
     private String type;
     private BigDecimal maxScore;
+    private BigDecimal weight;
     private String createdBy;
     private OffsetDateTime createdAt;
 }

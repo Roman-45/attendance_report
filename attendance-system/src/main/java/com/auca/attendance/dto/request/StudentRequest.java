@@ -19,4 +19,10 @@ public class StudentRequest {
 
     private String program;
     private String phone;
+
+    /**
+     * When true, a User account (role=STUDENT) is automatically created and
+     * a welcome email with a temporary password is sent to the student's email.
+     */
+    private boolean createAccount = false;
 }

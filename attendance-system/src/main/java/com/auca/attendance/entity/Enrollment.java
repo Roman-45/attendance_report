@@ -3,6 +3,7 @@ package com.auca.attendance.entity;
 import jakarta.persistence.*;
 import lombok.*;
 
+import java.math.BigDecimal;
 import java.time.OffsetDateTime;
 
 @Entity
@@ -28,6 +29,15 @@ public class Enrollment {
 
     @Column(name = "enrolled_at", nullable = false, updatable = false)
     private OffsetDateTime enrolledAt;
+
+    @Column(name = "final_grade", precision = 5, scale = 2)
+    private BigDecimal finalGrade;
+
+    @Column(name = "grade_letter", length = 5)
+    private String gradeLetter;
+
+    @Column(name = "grade_computed_at")
+    private OffsetDateTime gradeComputedAt;
 
     @PrePersist
     protected void onCreate() {

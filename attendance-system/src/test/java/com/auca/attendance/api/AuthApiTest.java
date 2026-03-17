@@ -150,17 +150,21 @@ class AuthApiTest extends BaseIntegrationTest {
     }
 
     // ─── Forgot password ─────────────────────────────────────────────────
+    // Use a class-specific IP so these 3 requests don't share the rate-limit
+    // bucket with SecurityRegressionTest (which also sends 1 forgot-password
+    // request from 127.0.0.1). Combined they would exceed the 3/hr limit.
+    private static final String AUTH_TEST_IP = "10.0.2.1";
 
     @Test
     @DisplayName("Forgot password always returns 200 even for unknown emails (no user enumeration)")
     void forgotPassword_ShouldAlwaysReturn200() {
-        ResponseEntity<Map> knownEmail = restTemplate.postForEntity(
-                BASE + "/forgot-password",
-                Map.of("email", "authtest@auca.ac.rw"), Map.class);
+        ResponseEntity<Map> knownEmail = restTemplate.exchange(
+                BASE + "/forgot-password", HttpMethod.POST,
+                forgotPasswordBody("authtest@auca.ac.rw"), Map.class);
 
-        ResponseEntity<Map> unknownEmail = restTemplate.postForEntity(
-                BASE + "/forgot-password",
-                Map.of("email", "nobody@auca.ac.rw"), Map.class);
+        ResponseEntity<Map> unknownEmail = restTemplate.exchange(
+                BASE + "/forgot-password", HttpMethod.POST,
+                forgotPasswordBody("nobody@auca.ac.rw"), Map.class);
 
         assertThat(knownEmail.getStatusCode()).isEqualTo(HttpStatus.OK);
         assertThat(unknownEmail.getStatusCode()).isEqualTo(HttpStatus.OK);
@@ -172,11 +176,18 @@ class AuthApiTest extends BaseIntegrationTest {
     @Test
     @DisplayName("Forgot password with invalid email format returns 400")
     void forgotPassword_ShouldReturn400_WhenEmailInvalid() {
-        ResponseEntity<Map> resp = restTemplate.postForEntity(
-                BASE + "/forgot-password",
-                Map.of("email", "not-an-email"), Map.class);
+        ResponseEntity<Map> resp = restTemplate.exchange(
+                BASE + "/forgot-password", HttpMethod.POST,
+                forgotPasswordBody("not-an-email"), Map.class);
 
         assertThat(resp.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
+    }
+
+    private HttpEntity<Map<String, String>> forgotPasswordBody(String email) {
+        HttpHeaders h = new HttpHeaders();
+        h.setContentType(MediaType.APPLICATION_JSON);
+        h.set("X-Forwarded-For", AUTH_TEST_IP);
+        return new HttpEntity<>(Map.of("email", email), h);
     }
 
     // ─── Helpers ─────────────────────────────────────────────────────────

@@ -29,6 +29,21 @@ public class AuthController {
         return ResponseEntity.ok(ApiResponse.success(authService.login(request)));
     }
 
+    /** Self-service registration for STUDENT or INSTRUCTOR roles. Sends verification email. */
+    @PostMapping("/register")
+    public ResponseEntity<ApiResponse<AuthResponse>> register(@Valid @RequestBody RegisterRequest request) {
+        return ResponseEntity.status(org.springframework.http.HttpStatus.CREATED)
+                .body(ApiResponse.success("Registration successful. Please check your email to verify your account.",
+                        authService.register(request)));
+    }
+
+    /** Activate account using the 6-digit OTP from the verification email. */
+    @PostMapping("/verify-email")
+    public ResponseEntity<ApiResponse<Void>> verifyEmail(@Valid @RequestBody VerifyEmailRequest request) {
+        authService.verifyEmail(request);
+        return ResponseEntity.ok(ApiResponse.success("Email verified successfully. You can now log in.", null));
+    }
+
     /** Return the currently authenticated user's profile. */
     @GetMapping("/me")
     public ResponseEntity<ApiResponse<AuthResponse>> me(@AuthenticationPrincipal User user) {

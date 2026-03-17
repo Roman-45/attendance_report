@@ -7,6 +7,8 @@ import com.auca.attendance.dto.response.AttendanceRecordResponse;
 import com.auca.attendance.dto.response.SessionResponse;
 import com.auca.attendance.entity.User;
 import com.auca.attendance.service.AttendanceService;
+import com.auca.attendance.service.AuditService;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -24,16 +26,20 @@ import java.util.Map;
 public class AttendanceController {
 
     private final AttendanceService attendanceService;
+    private final AuditService auditService;
 
     @PostMapping("/modules/{moduleId}/sessions")
     @PreAuthorize("hasRole('FACILITATOR')")
     public ResponseEntity<ApiResponse<SessionResponse>> createSession(
             @PathVariable Long moduleId,
             @Valid @RequestBody SessionRequest request,
-            @AuthenticationPrincipal User currentUser) {
+            @AuthenticationPrincipal User currentUser,
+            HttpServletRequest httpRequest) {
+        SessionResponse session = attendanceService.createSession(moduleId, request, currentUser);
+        auditService.log(currentUser, "CREATE", "AttendanceSession", session.getId(),
+                "Created session for module " + moduleId, httpRequest.getRemoteAddr());
         return ResponseEntity.status(HttpStatus.CREATED)
-                .body(ApiResponse.success("Session created",
-                        attendanceService.createSession(moduleId, request, currentUser)));
+                .body(ApiResponse.success("Session created", session));
     }
 
     @GetMapping("/modules/{moduleId}/sessions")
@@ -50,18 +56,26 @@ public class AttendanceController {
     @PreAuthorize("hasRole('FACILITATOR')")
     public ResponseEntity<ApiResponse<List<AttendanceRecordResponse>>> submitRecords(
             @PathVariable Long sessionId,
-            @Valid @RequestBody List<AttendanceRecordRequest> requests) {
-        return ResponseEntity.ok(ApiResponse.success("Attendance submitted",
-                attendanceService.submitRecords(sessionId, requests)));
+            @Valid @RequestBody List<AttendanceRecordRequest> requests,
+            @AuthenticationPrincipal User currentUser,
+            HttpServletRequest httpRequest) {
+        List<AttendanceRecordResponse> records = attendanceService.submitRecords(sessionId, requests);
+        auditService.log(currentUser, "CREATE", "AttendanceRecord", sessionId,
+                "Submitted " + requests.size() + " attendance records", httpRequest.getRemoteAddr());
+        return ResponseEntity.ok(ApiResponse.success("Attendance submitted", records));
     }
 
     @PatchMapping("/records/{recordId}")
     @PreAuthorize("hasAnyRole('FACILITATOR','ADMIN')")
     public ResponseEntity<ApiResponse<AttendanceRecordResponse>> correctRecord(
             @PathVariable Long recordId,
-            @Valid @RequestBody AttendanceRecordRequest request) {
-        return ResponseEntity.ok(ApiResponse.success("Record updated",
-                attendanceService.correctRecord(recordId, request)));
+            @Valid @RequestBody AttendanceRecordRequest request,
+            @AuthenticationPrincipal User currentUser,
+            HttpServletRequest httpRequest) {
+        AttendanceRecordResponse record = attendanceService.correctRecord(recordId, request);
+        auditService.log(currentUser, "UPDATE", "AttendanceRecord", recordId,
+                "Corrected attendance record", httpRequest.getRemoteAddr());
+        return ResponseEntity.ok(ApiResponse.success("Record updated", record));
     }
 
     @GetMapping("/students/{studentId}/attendance")

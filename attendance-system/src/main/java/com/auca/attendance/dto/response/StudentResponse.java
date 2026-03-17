@@ -13,4 +13,9 @@ public class StudentResponse {
     private Integer cohortYear;
     private String program;
     private String phone;
+    private String profilePhotoUrl;
+    /** True when this student has a login account (User row with role=STUDENT). */
+    private boolean hasAccount;
+    /** The linked User id, present only when hasAccount=true. */
+    private Long accountUserId;
 }

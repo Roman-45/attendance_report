@@ -31,6 +31,9 @@ public class MarkColumn {
     @Column(name = "max_score", nullable = false, precision = 5, scale = 2)
     private BigDecimal maxScore;
 
+    @Column(precision = 5, scale = 2)
+    private BigDecimal weight;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "created_by", nullable = false)
     private User createdBy;

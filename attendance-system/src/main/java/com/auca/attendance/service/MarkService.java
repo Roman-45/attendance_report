@@ -103,6 +103,7 @@ public class MarkService {
                 .name(c.getName())
                 .type(c.getType())
                 .maxScore(c.getMaxScore())
+                .weight(c.getWeight())
                 .createdBy(c.getCreatedBy().getName())
                 .createdAt(c.getCreatedAt())
                 .build();

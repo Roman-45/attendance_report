@@ -118,6 +118,13 @@
             <version>${mapstruct.version}</version>
         </dependency>
 
+        <!-- Rate limiting — token-bucket algorithm, in-memory, no Redis needed -->
+        <dependency>
+            <groupId>com.bucket4j</groupId>
+            <artifactId>bucket4j-core</artifactId>
+            <version>8.7.0</version>
+        </dependency>
+
         <!-- OpenAPI / Swagger UI -->
         <dependency>
             <groupId>org.springdoc</groupId>

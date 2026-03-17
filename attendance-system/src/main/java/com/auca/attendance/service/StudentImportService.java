@@ -111,6 +111,35 @@ public class StudentImportService {
                 .build();
     }
 
+    /**
+     * Generate a blank .xlsx template with the expected header row.
+     */
+    public byte[] generateTemplate() {
+        try (Workbook wb = new XSSFWorkbook()) {
+            Sheet sheet = wb.createSheet("Students");
+            Row header = sheet.createRow(0);
+            String[] columns = {"studentId", "name", "email", "cohortYear", "program"};
+            for (int i = 0; i < columns.length; i++) {
+                Cell cell = header.createCell(i);
+                cell.setCellValue(columns[i]);
+                sheet.setColumnWidth(i, 5000);
+            }
+            // Add one example row
+            Row example = sheet.createRow(1);
+            example.createCell(0).setCellValue("STU2024001");
+            example.createCell(1).setCellValue("Jane Doe");
+            example.createCell(2).setCellValue("jane.doe@example.com");
+            example.createCell(3).setCellValue(2024);
+            example.createCell(4).setCellValue("Computer Science");
+
+            java.io.ByteArrayOutputStream out = new java.io.ByteArrayOutputStream();
+            wb.write(out);
+            return out.toByteArray();
+        } catch (Exception e) {
+            throw new IllegalArgumentException("Failed to generate template: " + e.getMessage());
+        }
+    }
+
     // ─── Helpers ────────────────────────────────────────────────────────────
 
     private void validateContentType(MultipartFile file) {

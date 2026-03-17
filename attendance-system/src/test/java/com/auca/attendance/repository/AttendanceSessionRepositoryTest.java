@@ -43,6 +43,7 @@ class AttendanceSessionRepositoryTest extends BaseIntegrationTest {
                 .description("desc")
                 .startDate(LocalDate.now().minusMonths(1))
                 .endDate(LocalDate.now().plusMonths(5))
+                .createdBy(facilitator)
                 .build());
     }
 
@@ -99,6 +100,7 @@ class AttendanceSessionRepositoryTest extends BaseIntegrationTest {
                 .code("CS998").name("Other Module").description("d")
                 .startDate(LocalDate.now().minusMonths(1))
                 .endDate(LocalDate.now().plusMonths(5))
+                .createdBy(facilitator)
                 .build());
 
         // Save sessions on the other module only

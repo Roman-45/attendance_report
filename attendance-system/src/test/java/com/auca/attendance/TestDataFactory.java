@@ -1,6 +1,16 @@
 package com.auca.attendance;
 
-import com.auca.attendance.entity.*;
+import com.auca.attendance.entity.Enrollment;
+import com.auca.attendance.entity.AttendanceRecord;
+import com.auca.attendance.entity.AttendanceSession;
+import com.auca.attendance.entity.MarkColumn;
+import com.auca.attendance.entity.MarkEntry;
+import com.auca.attendance.entity.Module;
+import com.auca.attendance.entity.Notification;
+import com.auca.attendance.entity.PasswordResetToken;
+import com.auca.attendance.entity.RefreshToken;
+import com.auca.attendance.entity.Student;
+import com.auca.attendance.entity.User;
 import com.auca.attendance.enums.Role;
 
 import java.time.LocalDate;
@@ -52,13 +62,14 @@ public final class TestDataFactory {
                 .build();
     }
 
-    public static Module module(String suffix) {
+    public static Module module(String suffix, User createdBy) {
         return Module.builder()
                 .code("CS" + suffix)
                 .name("Test Module " + suffix)
                 .description("Test description")
                 .startDate(LocalDate.now().minusMonths(1))
                 .endDate(LocalDate.now().plusMonths(5))
+                .createdBy(createdBy)
                 .build();
     }
 
@@ -77,7 +88,7 @@ public final class TestDataFactory {
         AttendanceRecord r = AttendanceRecord.builder()
                 .session(session)
                 .student(student)
-                .status(com.auca.attendance.enums.AttendanceStatus.valueOf(status))
+                .status(status)
                 .consecutiveAbsentFlag(false)
                 .build();
         return r;

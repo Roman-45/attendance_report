@@ -12,4 +12,5 @@ public interface MarkEntryRepository extends JpaRepository<MarkEntry, Long> {
     List<MarkEntry> findByColumnIdIn(List<Long> columnIds);
     Optional<MarkEntry> findByColumnIdAndStudentId(Long columnId, Long studentId);
     boolean existsByColumnId(Long columnId);
+    List<MarkEntry> findByStudentIdAndColumnModuleId(Long studentId, Long moduleId);
 }
