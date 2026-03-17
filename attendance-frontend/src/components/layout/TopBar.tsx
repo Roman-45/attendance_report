@@ -1,0 +1,227 @@
+import { useState, useEffect, useRef } from 'react'
+import { useNavigate } from 'react-router-dom'
+import { useAuth } from '@/context/AuthContext'
+import { Input } from '@/components/ui/input'
+import { Button } from '@/components/ui/button'
+import { Badge } from '@/components/ui/badge'
+import { useQuery } from '@tanstack/react-query'
+import client from '@/api/client'
+import { Search, Bell, X, Menu } from 'lucide-react'
+
+interface SearchResult {
+  type: 'student' | 'module' | 'page'
+  label: string
+  description: string
+  route: string
+}
+
+interface TopBarProps {
+  onMenuClick?: () => void
+}
+
+const PAGE_RESULTS: SearchResult[] = [
+  { type: 'page', label: 'Dashboard', description: 'Overview & statistics', route: '/dashboard' },
+  { type: 'page', label: 'Students', description: 'Manage students', route: '/students' },
+  { type: 'page', label: 'Modules', description: 'Manage modules', route: '/modules' },
+  { type: 'page', label: 'Attendance', description: 'Record & view attendance', route: '/attendance' },
+  { type: 'page', label: 'Marks & Grades', description: 'Manage marks & compute grades', route: '/marks' },
+  { type: 'page', label: 'Reports', description: 'Download reports (Excel/PDF)', route: '/reports' },
+  { type: 'page', label: 'Notifications', description: 'View notifications', route: '/notifications' },
+  { type: 'page', label: 'Audit Log', description: 'View audit trail', route: '/audit-log' },
+  { type: 'page', label: 'My Portal', description: 'Student self-service', route: '/portal' },
+]
+
+export function TopBar({ onMenuClick }: TopBarProps) {
+  const { user, hasRole } = useAuth()
+  const navigate = useNavigate()
+  const [query, setQuery] = useState('')
+  const [open, setOpen] = useState(false)
+  const [results, setResults] = useState<SearchResult[]>([])
+  const inputRef = useRef<HTMLInputElement>(null)
+  const dropdownRef = useRef<HTMLDivElement>(null)
+
+  const { data: unreadCount = 0 } = useQuery({
+    queryKey: ['unread-notification-count'],
+    queryFn: () => client.get('/notifications/unread-count').then(r => r.data.data).catch(() => 0),
+    refetchInterval: 30_000,
+    enabled: hasRole('ADMIN'),
+  })
+
+  useEffect(() => {
+    if (!query.trim()) {
+      setResults([])
+      return
+    }
+    const q = query.toLowerCase()
+
+    const pageMatches = PAGE_RESULTS.filter(
+      p => p.label.toLowerCase().includes(q) || p.description.toLowerCase().includes(q)
+    )
+
+    const fetchResults = async () => {
+      const merged: SearchResult[] = [...pageMatches]
+
+      if (hasRole('ADMIN', 'FACILITATOR', 'INSTRUCTOR')) {
+        try {
+          const [studentsResp, modulesResp] = await Promise.all([
+            hasRole('ADMIN') ? client.get('/students', { params: { search: query, size: 5 } }).catch(() => null) : null,
+            client.get('/modules').catch(() => null),
+          ])
+
+          if (studentsResp?.data?.data) {
+            const students = studentsResp.data.data.content ?? studentsResp.data.data ?? []
+            students.slice(0, 5).forEach((s: { studentId: string; name: string; program: string }) => {
+              merged.push({
+                type: 'student',
+                label: s.name,
+                description: `${s.studentId} — ${s.program}`,
+                route: '/students',
+              })
+            })
+          }
+
+          if (modulesResp?.data?.data) {
+            const modules = modulesResp.data.data as Array<{ id: number; code: string; name: string }>
+            modules
+              .filter(m => m.name.toLowerCase().includes(q) || m.code.toLowerCase().includes(q))
+              .slice(0, 5)
+              .forEach(m => {
+                merged.push({
+                  type: 'module',
+                  label: m.name,
+                  description: m.code,
+                  route: '/modules',
+                })
+              })
+          }
+        } catch {
+          // ignore search errors
+        }
+      }
+
+      setResults(merged.slice(0, 10))
+    }
+
+    const timer = setTimeout(fetchResults, 250)
+    return () => clearTimeout(timer)
+  }, [query, hasRole])
+
+  // Close dropdown on outside click
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
+        setOpen(false)
+      }
+    }
+    document.addEventListener('mousedown', handler)
+    return () => document.removeEventListener('mousedown', handler)
+  }, [])
+
+  // Keyboard shortcut: Ctrl+K / Cmd+K
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+        e.preventDefault()
+        inputRef.current?.focus()
+        setOpen(true)
+      }
+      if (e.key === 'Escape') {
+        setOpen(false)
+        inputRef.current?.blur()
+      }
+    }
+    document.addEventListener('keydown', handler)
+    return () => document.removeEventListener('keydown', handler)
+  }, [])
+
+  const handleSelect = (result: SearchResult) => {
+    navigate(result.route)
+    setQuery('')
+    setOpen(false)
+  }
+
+  return (
+    <header className="flex h-16 items-center justify-between border-b bg-background px-4 md:px-6">
+      {/* Hamburger — mobile only */}
+      <Button
+        variant="ghost"
+        size="icon"
+        className="md:hidden mr-2 shrink-0"
+        onClick={onMenuClick}
+        aria-label="Open menu"
+      >
+        <Menu className="h-5 w-5" />
+      </Button>
+
+      {/* Global Search */}
+      <div className="relative flex-1 max-w-md" ref={dropdownRef}>
+        <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+        <Input
+          ref={inputRef}
+          placeholder="Search... (Ctrl+K)"
+          className="pl-9 pr-8"
+          value={query}
+          onChange={(e) => { setQuery(e.target.value); setOpen(true) }}
+          onFocus={() => query && setOpen(true)}
+        />
+        {query && (
+          <button
+            className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+            onClick={() => { setQuery(''); setResults([]); setOpen(false) }}
+          >
+            <X className="h-4 w-4" />
+          </button>
+        )}
+
+        {open && results.length > 0 && (
+          <div className="absolute top-full left-0 z-50 mt-1 w-full rounded-md border bg-popover p-1 shadow-lg">
+            {results.map((r, i) => (
+              <button
+                key={`${r.type}-${i}`}
+                className="flex w-full items-center gap-3 rounded-sm px-3 py-2 text-left text-sm hover:bg-accent hover:text-accent-foreground"
+                onClick={() => handleSelect(r)}
+              >
+                <Badge variant="outline" className="shrink-0 text-xs capitalize w-16 justify-center">
+                  {r.type}
+                </Badge>
+                <div className="min-w-0">
+                  <p className="font-medium truncate">{r.label}</p>
+                  <p className="text-xs text-muted-foreground truncate">{r.description}</p>
+                </div>
+              </button>
+            ))}
+          </div>
+        )}
+
+        {open && query && results.length === 0 && (
+          <div className="absolute top-full left-0 z-50 mt-1 w-full rounded-md border bg-popover p-4 shadow-lg text-center text-sm text-muted-foreground">
+            No results found
+          </div>
+        )}
+      </div>
+
+      {/* Right side: notifications + user */}
+      <div className="flex items-center gap-2 md:gap-4 ml-2 md:ml-4">
+        {hasRole('ADMIN') && (
+          <Button
+            variant="ghost"
+            size="icon"
+            className="relative"
+            onClick={() => navigate('/notifications')}
+          >
+            <Bell className="h-5 w-5" />
+            {unreadCount > 0 && (
+              <span className="absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-destructive text-[10px] font-bold text-destructive-foreground">
+                {unreadCount > 9 ? '9+' : unreadCount}
+              </span>
+            )}
+          </Button>
+        )}
+        <div className="text-sm text-right hidden sm:block">
+          <p className="font-medium">{user?.name}</p>
+          <p className="text-xs text-muted-foreground">{user?.role}</p>
+        </div>
+      </div>
+    </header>
+  )
+}
