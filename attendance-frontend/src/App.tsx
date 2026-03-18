@@ -16,6 +16,7 @@ import Reports from '@/pages/Reports'
 import Notifications from '@/pages/Notifications'
 import AuditLog from '@/pages/AuditLog'
 import StudentPortal from '@/pages/StudentPortal'
+import Profile from '@/pages/Profile'
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -56,6 +57,7 @@ export default function App() {
               <Route path="/audit-log" element={<AuditLog />} />
               <Route path="/portal" element={<StudentPortal />} />
               <Route path="/portal/*" element={<StudentPortal />} />
+              <Route path="/profile" element={<Profile />} />
             </Route>
             <Route path="/" element={<RoleRedirect />} />
             <Route path="*" element={<Navigate to="/" replace />} />

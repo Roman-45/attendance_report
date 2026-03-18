@@ -4,9 +4,18 @@ import { useAuth } from '@/context/AuthContext'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
+import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
 import { useQuery } from '@tanstack/react-query'
 import client from '@/api/client'
-import { Search, Bell, X, Menu } from 'lucide-react'
+import { Search, Bell, X, Menu, UserCircle, LogOut } from 'lucide-react'
 
 interface SearchResult {
   type: 'student' | 'module' | 'page'
@@ -29,10 +38,11 @@ const PAGE_RESULTS: SearchResult[] = [
   { type: 'page', label: 'Notifications', description: 'View notifications', route: '/notifications' },
   { type: 'page', label: 'Audit Log', description: 'View audit trail', route: '/audit-log' },
   { type: 'page', label: 'My Portal', description: 'Student self-service', route: '/portal' },
+  { type: 'page', label: 'Profile & Settings', description: 'Manage your profile', route: '/profile' },
 ]
 
 export function TopBar({ onMenuClick }: TopBarProps) {
-  const { user, hasRole } = useAuth()
+  const { user, hasRole, logout } = useAuth()
   const navigate = useNavigate()
   const [query, setQuery] = useState('')
   const [open, setOpen] = useState(false)
@@ -140,8 +150,16 @@ export function TopBar({ onMenuClick }: TopBarProps) {
     setOpen(false)
   }
 
+  const initials = user?.name
+    ? user.name.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2)
+    : '?'
+
+  const photoSrc = user?.photoUrl
+    ? `${client.defaults.baseURL?.replace('/api/v1', '')}${user.photoUrl}`
+    : undefined
+
   return (
-    <header className="flex h-16 items-center justify-between border-b bg-background px-4 md:px-6">
+    <header className="flex h-16 items-center justify-between border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 sticky top-0 z-30 px-4 md:px-6">
       {/* Hamburger — mobile only */}
       <Button
         variant="ghost"
@@ -200,8 +218,8 @@ export function TopBar({ onMenuClick }: TopBarProps) {
         )}
       </div>
 
-      {/* Right side: notifications + user */}
-      <div className="flex items-center gap-2 md:gap-4 ml-2 md:ml-4">
+      {/* Right side: notifications + user dropdown */}
+      <div className="flex items-center gap-2 md:gap-3 ml-2 md:ml-4">
         {hasRole('ADMIN') && (
           <Button
             variant="ghost"
@@ -217,10 +235,42 @@ export function TopBar({ onMenuClick }: TopBarProps) {
             )}
           </Button>
         )}
-        <div className="text-sm text-right hidden sm:block">
-          <p className="font-medium">{user?.name}</p>
-          <p className="text-xs text-muted-foreground">{user?.role}</p>
-        </div>
+
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <button className="flex items-center gap-2 rounded-full outline-none focus-visible:ring-2 focus-visible:ring-ring hover:opacity-80 transition-opacity">
+              <Avatar className="h-8 w-8">
+                <AvatarImage src={photoSrc} alt={user?.name} />
+                <AvatarFallback className="text-xs bg-primary text-primary-foreground font-medium">
+                  {initials}
+                </AvatarFallback>
+              </Avatar>
+              <span className="hidden sm:block text-sm font-medium">{user?.name}</span>
+            </button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-52">
+            <DropdownMenuLabel className="font-normal">
+              <div className="flex flex-col space-y-1">
+                <p className="text-sm font-medium leading-none">{user?.name}</p>
+                <p className="text-xs leading-none text-muted-foreground">{user?.email}</p>
+                <p className="text-xs leading-none text-muted-foreground capitalize">{user?.role?.toLowerCase()}</p>
+              </div>
+            </DropdownMenuLabel>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem onClick={() => navigate('/profile')}>
+              <UserCircle className="mr-2 h-4 w-4" />
+              Profile & Settings
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem
+              onClick={logout}
+              className="text-destructive focus:text-destructive focus:bg-destructive/10"
+            >
+              <LogOut className="mr-2 h-4 w-4" />
+              Sign Out
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
     </header>
   )

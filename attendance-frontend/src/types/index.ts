@@ -6,6 +6,7 @@ export interface User {
   email: string
   role: Role
   mfaEnabled: boolean
+  photoUrl?: string | null
 }
 
 export interface AuthTokens {
