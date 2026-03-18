@@ -59,6 +59,18 @@ public class User implements UserDetails {
     @Column(name = "email_otp_expires_at")
     private LocalDateTime emailOtpExpiresAt;
 
+    @Column(name = "profile_photo_path", length = 500)
+    private String profilePhotoPath;
+
+    @Column(name = "pending_email", length = 150)
+    private String pendingEmail;
+
+    @Column(name = "email_change_otp", length = 6)
+    private String emailChangeOtp;
+
+    @Column(name = "email_change_otp_expires_at")
+    private LocalDateTime emailChangeOtpExpiresAt;
+
     @PrePersist
     protected void onCreate() {
         createdAt = OffsetDateTime.now();

@@ -29,6 +29,18 @@ public class FileStorageService {
         }
     }
 
+    public String storeUserPhoto(Long userId, MultipartFile file) throws IOException {
+        String ext = getExtension(file.getOriginalFilename());
+        if (!ext.matches("jpg|jpeg|png|gif")) {
+            throw new IllegalArgumentException("Only image files (jpg, png, gif) are allowed");
+        }
+        String filename = "user-" + userId + "-" + UUID.randomUUID().toString().substring(0, 8) + "." + ext;
+        Path target = rootPath.resolve("photos").resolve("users").resolve(filename);
+        Files.createDirectories(target.getParent());
+        Files.copy(file.getInputStream(), target, StandardCopyOption.REPLACE_EXISTING);
+        return "photos/users/" + filename;
+    }
+
     public String storeProfilePhoto(Long studentId, MultipartFile file) throws IOException {
         String ext = getExtension(file.getOriginalFilename());
         if (!ext.matches("jpg|jpeg|png|gif")) {

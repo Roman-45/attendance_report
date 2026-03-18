@@ -47,11 +47,13 @@ public class AuthController {
     /** Return the currently authenticated user's profile. */
     @GetMapping("/me")
     public ResponseEntity<ApiResponse<AuthResponse>> me(@AuthenticationPrincipal User user) {
+        String photoUrl = user.getProfilePhotoPath() != null ? "/api/v1/profile/photo" : null;
         AuthResponse response = AuthResponse.builder()
                 .userId(user.getId())
                 .name(user.getName())
                 .email(user.getEmail())
                 .role(user.getRole().name())
+                .photoUrl(photoUrl)
                 .build();
         return ResponseEntity.ok(ApiResponse.success(response));
     }

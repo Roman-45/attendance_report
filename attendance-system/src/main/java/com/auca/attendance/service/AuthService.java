@@ -217,7 +217,8 @@ public class AuthService {
     }
 
     // ─── Mapper ─────────────────────────────────────────────────────────────
-    private AuthResponse buildAuthResponse(User user, String accessToken, String refreshToken) {
+    public AuthResponse buildAuthResponse(User user, String accessToken, String refreshToken) {
+        String photoUrl = user.getProfilePhotoPath() != null ? "/api/v1/profile/photo" : null;
         return AuthResponse.builder()
                 .token(accessToken)
                 .refreshToken(refreshToken)
@@ -225,6 +226,7 @@ public class AuthService {
                 .name(user.getName())
                 .email(user.getEmail())
                 .role(user.getRole().name())
+                .photoUrl(photoUrl)
                 .build();
     }
 }
