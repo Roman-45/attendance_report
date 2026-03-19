@@ -1,5 +1,5 @@
 import { useState, useRef } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import { useAuth } from '@/context/AuthContext'
 import client from '@/api/client'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -7,12 +7,15 @@ import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar'
-import { Camera, Save, Mail, CheckCircle } from 'lucide-react'
+import { Badge } from '@/components/ui/badge'
+import { Camera, Save, Mail, CheckCircle, GraduationCap } from 'lucide-react'
 import { useToast } from '@/hooks/use-toast'
 
 export default function Profile() {
   const { user, refreshUser, logout } = useAuth()
   const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
+  const profileIncomplete = searchParams.get('complete') === 'true'
   const { toast } = useToast()
   const fileInputRef = useRef<HTMLInputElement>(null)
 
@@ -118,43 +121,71 @@ export default function Profile() {
         <p className="text-muted-foreground">Manage your account information</p>
       </div>
 
-      {/* Avatar */}
-      <Card className="shadow-sm">
-        <CardHeader>
-          <CardTitle className="text-base">Profile Photo</CardTitle>
-        </CardHeader>
-        <CardContent className="flex items-center gap-6">
-          <div className="relative group cursor-pointer" onClick={handlePhotoClick}>
-            <Avatar className="h-24 w-24">
-              <AvatarImage src={getPhotoSrc()} alt={user?.name} />
-              <AvatarFallback className="text-xl bg-primary text-primary-foreground">
-                {initials}
-              </AvatarFallback>
-            </Avatar>
-            <div className="absolute inset-0 flex items-center justify-center rounded-full bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity">
-              <Camera className="h-6 w-6 text-white" />
+      {/* Google signup completion banner */}
+      {profileIncomplete && (
+        <div className="flex items-start gap-3 rounded-xl border border-primary/20 bg-primary/5 px-4 py-3">
+          <GraduationCap className="h-5 w-5 text-primary mt-0.5 shrink-0" />
+          <div>
+            <p className="text-sm font-medium text-primary">Complete your profile</p>
+            <p className="text-xs text-muted-foreground mt-0.5">
+              You signed in with Google. Please update your full name below to finish setting up your account.
+            </p>
+          </div>
+        </div>
+      )}
+
+      {/* Profile header card with gradient banner */}
+      <div className="rounded-xl overflow-hidden border shadow-sm">
+        {/* Banner */}
+        <div className="h-28 bg-gradient-to-r from-primary via-sky-500 to-teal-400" />
+        {/* Content below banner */}
+        <div className="px-6 pb-6 bg-card">
+          <div className="flex items-end gap-4 -mt-12 mb-4">
+            {/* Avatar with click to upload */}
+            <div
+              className="relative group cursor-pointer ring-4 ring-background rounded-full shrink-0"
+              onClick={handlePhotoClick}
+            >
+              <Avatar className="h-24 w-24">
+                <AvatarImage src={getPhotoSrc()} alt={user?.name} />
+                <AvatarFallback className="text-xl bg-primary text-primary-foreground">
+                  {initials}
+                </AvatarFallback>
+              </Avatar>
+              <div className="absolute inset-0 flex items-center justify-center rounded-full bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity">
+                {photoUploading
+                  ? <span className="h-5 w-5 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                  : <Camera className="h-5 w-5 text-white" />
+                }
+              </div>
+            </div>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/jpeg,image/png,image/gif"
+              className="hidden"
+              onChange={handlePhotoChange}
+            />
+            {/* Name + badges */}
+            <div className="mb-2 min-w-0">
+              <h2 className="text-xl font-bold truncate">{user?.name}</h2>
+              <div className="flex flex-wrap gap-2 mt-1.5">
+                {user?.role && (
+                  <Badge variant="secondary" className="text-xs">
+                    {user.role.charAt(0) + user.role.slice(1).toLowerCase()}
+                  </Badge>
+                )}
+                <Badge className="text-xs bg-emerald-100 text-emerald-700 border-emerald-200 hover:bg-emerald-100">
+                  ✓ Email verified
+                </Badge>
+              </div>
             </div>
           </div>
-          <div className="flex flex-col gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handlePhotoClick}
-              disabled={photoUploading}
-            >
-              {photoUploading ? 'Uploading…' : 'Change Photo'}
-            </Button>
-            <p className="text-xs text-muted-foreground">JPG, PNG or GIF · max 10 MB</p>
-          </div>
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept="image/jpeg,image/png,image/gif"
-            className="hidden"
-            onChange={handlePhotoChange}
-          />
-        </CardContent>
-      </Card>
+          <p className="text-xs text-muted-foreground">
+            Click on your avatar to upload a new profile photo · JPG, PNG or GIF · max 10 MB
+          </p>
+        </div>
+      </div>
 
       {/* Display Name */}
       <Card className="shadow-sm">

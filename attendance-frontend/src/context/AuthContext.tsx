@@ -8,6 +8,7 @@ interface AuthState {
   isLoading: boolean
   login: (email: string, password: string) => Promise<{ mfaRequired: boolean }>
   verifyMfa: (email: string, otp: string) => Promise<void>
+  googleLogin: (credential: string) => Promise<{ profileIncomplete: boolean }>
   logout: () => void
   hasRole: (...roles: Role[]) => boolean
   refreshUser: () => Promise<void>
@@ -56,6 +57,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     await fetchMe()
   }
 
+  const googleLogin = async (credential: string): Promise<{ profileIncomplete: boolean }> => {
+    const { data } = await client.post('/auth/google', { credential })
+    localStorage.setItem('accessToken', data.data.token)
+    localStorage.setItem('refreshToken', data.data.refreshToken)
+    await fetchMe()
+    return { profileIncomplete: !!data.data.profileIncomplete }
+  }
+
   const logout = () => {
     localStorage.removeItem('accessToken')
     localStorage.removeItem('refreshToken')
@@ -72,7 +81,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [fetchMe])
 
   return (
-    <AuthContext.Provider value={{ user, isAuthenticated: !!user, isLoading, login, verifyMfa, logout, hasRole, refreshUser }}>
+    <AuthContext.Provider value={{ user, isAuthenticated: !!user, isLoading, login, verifyMfa, googleLogin, logout, hasRole, refreshUser }}>
       {children}
     </AuthContext.Provider>
   )

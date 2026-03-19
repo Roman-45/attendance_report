@@ -15,6 +15,7 @@ import {
 } from '@/components/ui/select'
 import { BookOpen, ClipboardCheck, AlertTriangle, Award } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { GradientStatCard } from './Dashboard'
 
 type Tab = 'overview' | 'modules' | 'attendance' | 'marks'
 
@@ -126,33 +127,27 @@ export default function StudentPortal() {
 
           {/* Stat cards */}
           <div className="grid gap-4 md:grid-cols-3">
-            <Card className="border-l-4 border-l-blue-500 shadow-sm">
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Enrolled Modules</CardTitle>
-                <BookOpen className="h-4 w-4 text-blue-500" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">{modules.length}</div>
-              </CardContent>
-            </Card>
-            <Card className="border-l-4 border-l-emerald-500 shadow-sm">
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Attendance Records</CardTitle>
-                <ClipboardCheck className="h-4 w-4 text-emerald-500" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">{attendance.length}</div>
-              </CardContent>
-            </Card>
-            <Card className="border-l-4 border-l-violet-500 shadow-sm">
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Marks Entered</CardTitle>
-                <Award className="h-4 w-4 text-violet-500" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">{marks.length}</div>
-              </CardContent>
-            </Card>
+            <GradientStatCard
+              label="Enrolled Modules"
+              value={modules.length}
+              icon={BookOpen}
+              gradient="from-blue-500 to-sky-400"
+              shadow="shadow-blue-500/20"
+            />
+            <GradientStatCard
+              label="Attendance Records"
+              value={attendance.length}
+              icon={ClipboardCheck}
+              gradient="from-emerald-500 to-teal-400"
+              shadow="shadow-emerald-500/20"
+            />
+            <GradientStatCard
+              label="Marks Entered"
+              value={marks.length}
+              icon={Award}
+              gradient="from-violet-500 to-purple-400"
+              shadow="shadow-violet-500/20"
+            />
           </div>
 
           {/* Module summary */}

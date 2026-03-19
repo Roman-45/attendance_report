@@ -23,9 +23,11 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.client.RestTemplate;
 
 import java.time.LocalDateTime;
 import java.time.Year;
+import java.util.Map;
 import java.util.Random;
 
 @Service
@@ -214,6 +216,87 @@ public class AuthService {
             // Log but don't fail — account is created; user can re-register if needed
             System.err.println("[WARN] Failed to send verification email to " + user.getEmail() + ": " + e.getMessage());
         }
+    }
+
+    // ─── Google OAuth ────────────────────────────────────────────────────────
+
+    /**
+     * Authenticate via Google ID token.
+     * <ol>
+     *   <li>Verifies the token with Google's tokeninfo endpoint.</li>
+     *   <li>Finds or creates a local user linked to the Google account.</li>
+     *   <li>Returns our own JWT pair; {@code profileIncomplete=true} for brand-new accounts.</li>
+     * </ol>
+     */
+    @Transactional
+    @SuppressWarnings("unchecked")
+    public AuthResponse googleLogin(String credential) {
+        // Verify the ID token with Google
+        String url = "https://www.googleapis.com/oauth2/v3/tokeninfo?id_token=" + credential;
+        RestTemplate restTemplate = new RestTemplate();
+        Map<String, Object> info;
+        try {
+            info = restTemplate.getForObject(url, Map.class);
+        } catch (Exception e) {
+            throw new IllegalArgumentException("Invalid Google token");
+        }
+        if (info == null || !"true".equals(String.valueOf(info.get("email_verified")))) {
+            throw new IllegalArgumentException("Google account email is not verified");
+        }
+
+        String googleId = String.valueOf(info.get("sub"));
+        String email    = String.valueOf(info.get("email"));
+        String name     = info.containsKey("name") ? String.valueOf(info.get("name")) : email.split("@")[0];
+
+        boolean profileIncomplete = false;
+
+        // Look up by googleId first, fall back to email (merge existing account)
+        User user = userRepository.findByGoogleId(googleId)
+                .or(() -> userRepository.findByEmail(email))
+                .orElse(null);
+
+        if (user == null) {
+            // Brand-new user — create account
+            user = userRepository.save(User.builder()
+                    .name(name)
+                    .email(email)
+                    .googleId(googleId)
+                    .role(Role.STUDENT)
+                    .emailVerified(true)
+                    .build());
+
+            // Auto-create linked Student record
+            String studentId = "STU" + Year.now().getValue() + String.format("%04d",
+                    (int)(Math.random() * 9000) + 1000);
+            studentRepository.save(Student.builder()
+                    .studentId(studentId)
+                    .name(name)
+                    .email(email)
+                    .cohortYear(Year.now().getValue())
+                    .account(user)
+                    .build());
+
+            profileIncomplete = true;
+        } else if (user.getGoogleId() == null) {
+            // Existing email-only account — link Google ID
+            user.setGoogleId(googleId);
+            userRepository.save(user);
+        }
+
+        String accessToken = jwtService.generateToken(user);
+        RefreshToken refreshToken = refreshTokenService.createRefreshToken(user);
+
+        String photoUrl = user.getProfilePhotoPath() != null ? "/api/v1/profile/photo" : null;
+        return AuthResponse.builder()
+                .token(accessToken)
+                .refreshToken(refreshToken.getToken())
+                .userId(user.getId())
+                .name(user.getName())
+                .email(user.getEmail())
+                .role(user.getRole().name())
+                .photoUrl(photoUrl)
+                .profileIncomplete(profileIncomplete)
+                .build();
     }
 
     // ─── Mapper ─────────────────────────────────────────────────────────────

@@ -14,6 +14,8 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.Map;
+
 @RestController
 @RequestMapping("/api/v1/auth")
 @RequiredArgsConstructor
@@ -27,6 +29,22 @@ public class AuthController {
     @PostMapping("/login")
     public ResponseEntity<ApiResponse<AuthResponse>> login(@Valid @RequestBody LoginRequest request) {
         return ResponseEntity.ok(ApiResponse.success(authService.login(request)));
+    }
+
+    /**
+     * Google OAuth sign-in / sign-up.
+     * Accepts the ID token (credential) returned by Google Identity Services on the frontend,
+     * verifies it with Google, and returns our own JWT pair.
+     * New accounts will have {@code profileIncomplete=true} in the response.
+     */
+    @PostMapping("/google")
+    public ResponseEntity<ApiResponse<AuthResponse>> googleLogin(@RequestBody Map<String, String> body) {
+        String credential = body.get("credential");
+        if (credential == null || credential.isBlank()) {
+            return ResponseEntity.badRequest()
+                    .body(ApiResponse.error("Missing Google credential"));
+        }
+        return ResponseEntity.ok(ApiResponse.success(authService.googleLogin(credential), "Login successful"));
     }
 
     /** Self-service registration for STUDENT or INSTRUCTOR roles. Sends verification email. */

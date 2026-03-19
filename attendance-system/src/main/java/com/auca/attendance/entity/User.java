@@ -32,7 +32,7 @@ public class User implements UserDetails {
     private String email;
 
     @JsonIgnore
-    @Column(nullable = false)
+    @Column(nullable = true)
     private String password;
 
     @Enumerated(EnumType.STRING)
@@ -70,6 +70,10 @@ public class User implements UserDetails {
 
     @Column(name = "email_change_otp_expires_at")
     private LocalDateTime emailChangeOtpExpiresAt;
+
+    /** Google OAuth subject (`sub`) — set for accounts created/linked via Google Sign-In. */
+    @Column(name = "google_id", length = 100, unique = true)
+    private String googleId;
 
     @PrePersist
     protected void onCreate() {

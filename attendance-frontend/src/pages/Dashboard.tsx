@@ -2,7 +2,7 @@ import { useQuery } from '@tanstack/react-query'
 import client from '@/api/client'
 import { useAuth } from '@/context/AuthContext'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Users, BookOpen, ClipboardCheck, TrendingUp } from 'lucide-react'
+import { Users, BookOpen, ClipboardCheck, TrendingUp, type LucideIcon } from 'lucide-react'
 import type { ModuleDashboard } from '@/types'
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts'
 
@@ -42,42 +42,34 @@ export default function Dashboard() {
       </div>
 
       <div className="grid gap-4 md:grid-cols-4">
-        <Card className="border-l-4 border-l-blue-500 shadow-sm hover:shadow-md transition-shadow">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Modules</CardTitle>
-            <BookOpen className="h-4 w-4 text-blue-500" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{modules?.length ?? 0}</div>
-          </CardContent>
-        </Card>
-        <Card className="border-l-4 border-l-emerald-500 shadow-sm hover:shadow-md transition-shadow">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Enrollments</CardTitle>
-            <Users className="h-4 w-4 text-emerald-500" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{totalStudents}</div>
-          </CardContent>
-        </Card>
-        <Card className="border-l-4 border-l-amber-500 shadow-sm hover:shadow-md transition-shadow">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Sessions Recorded</CardTitle>
-            <ClipboardCheck className="h-4 w-4 text-amber-500" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{totalSessions}</div>
-          </CardContent>
-        </Card>
-        <Card className="border-l-4 border-l-violet-500 shadow-sm hover:shadow-md transition-shadow">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Avg Attendance</CardTitle>
-            <TrendingUp className="h-4 w-4 text-violet-500" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{avgAttendance}%</div>
-          </CardContent>
-        </Card>
+        <GradientStatCard
+          label="Total Modules"
+          value={modules?.length ?? 0}
+          icon={BookOpen}
+          gradient="from-blue-500 to-sky-400"
+          shadow="shadow-blue-500/20"
+        />
+        <GradientStatCard
+          label="Total Enrollments"
+          value={totalStudents}
+          icon={Users}
+          gradient="from-emerald-500 to-teal-400"
+          shadow="shadow-emerald-500/20"
+        />
+        <GradientStatCard
+          label="Sessions Recorded"
+          value={totalSessions}
+          icon={ClipboardCheck}
+          gradient="from-amber-500 to-orange-400"
+          shadow="shadow-amber-500/20"
+        />
+        <GradientStatCard
+          label="Avg Attendance"
+          value={`${avgAttendance}%`}
+          icon={TrendingUp}
+          gradient="from-violet-500 to-purple-400"
+          shadow="shadow-violet-500/20"
+        />
       </div>
 
       {dashboards && dashboards.length > 0 && (
@@ -101,3 +93,30 @@ export default function Dashboard() {
     </div>
   )
 }
+
+// ── Reusable gradient stat card ──────────────────────────────────────────────
+interface GradientStatCardProps {
+  label: string
+  value: string | number
+  icon: LucideIcon
+  gradient: string
+  shadow: string
+}
+
+function GradientStatCard({ label, value, icon: Icon, gradient, shadow }: GradientStatCardProps) {
+  return (
+    <div className={`rounded-xl p-5 bg-gradient-to-br ${gradient} text-white shadow-lg ${shadow}`}>
+      <div className="flex justify-between items-start">
+        <div className="min-w-0">
+          <p className="text-white/75 text-sm font-medium truncate">{label}</p>
+          <p className="text-3xl font-bold mt-1 tabular-nums">{value}</p>
+        </div>
+        <div className="rounded-full bg-white/20 p-2.5 shrink-0 ml-3">
+          <Icon className="h-5 w-5 text-white" />
+        </div>
+      </div>
+    </div>
+  )
+}
+
+export { GradientStatCard }

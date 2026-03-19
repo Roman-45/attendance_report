@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Outlet, Navigate } from 'react-router-dom'
 import { useAuth } from '@/context/AuthContext'
+import { SidebarProvider } from '@/context/SidebarContext'
 import { Sidebar } from './Sidebar'
 import { TopBar } from './TopBar'
 import { Footer } from './Footer'
@@ -35,32 +36,34 @@ export function AppLayout() {
   }
 
   return (
-    <div className="flex h-screen">
-      {/* Desktop sidebar — always visible on md+ */}
-      <div className="hidden md:block shrink-0">
-        <Sidebar />
-      </div>
+    <SidebarProvider>
+      <div className="flex h-screen">
+        {/* Desktop sidebar — always visible on md+ */}
+        <div className="hidden md:block shrink-0">
+          <Sidebar />
+        </div>
 
-      {/* Mobile sidebar — overlay with smooth slide */}
-      {sidebarOpen && (
-        <>
-          <div
-            className="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm md:hidden"
-            onClick={() => setSidebarOpen(false)}
-          />
-          <div className="fixed inset-y-0 left-0 z-50 md:hidden animate-slide-up">
-            <Sidebar onNavClick={() => setSidebarOpen(false)} />
-          </div>
-        </>
-      )}
+        {/* Mobile sidebar — overlay with smooth slide */}
+        {sidebarOpen && (
+          <>
+            <div
+              className="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm md:hidden"
+              onClick={() => setSidebarOpen(false)}
+            />
+            <div className="fixed inset-y-0 left-0 z-50 md:hidden animate-slide-up">
+              <Sidebar onNavClick={() => setSidebarOpen(false)} />
+            </div>
+          </>
+        )}
 
-      <div className="flex flex-1 flex-col overflow-hidden">
-        <TopBar onMenuClick={() => setSidebarOpen((v) => !v)} />
-        <main className="flex-1 overflow-auto p-6 animate-fade-in">
-          <Outlet />
-        </main>
-        <Footer />
+        <div className="flex flex-1 flex-col overflow-hidden">
+          <TopBar onMenuClick={() => setSidebarOpen((v) => !v)} />
+          <main className="flex-1 overflow-auto p-6 animate-fade-in">
+            <Outlet />
+          </main>
+          <Footer />
+        </div>
       </div>
-    </div>
+    </SidebarProvider>
   )
 }

@@ -23,4 +23,10 @@ public class AuthResponse {
     /** Relative URL to user's profile photo, null if not set. */
     @JsonInclude(JsonInclude.Include.NON_NULL)
     private String photoUrl;
+    /**
+     * True when the account was just created via Google OAuth and the user should
+     * be redirected to the profile page to complete their details (name / student ID).
+     */
+    @Builder.Default
+    private boolean profileIncomplete = false;
 }
