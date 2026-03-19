@@ -4,6 +4,7 @@ import { useAuth } from '@/context/AuthContext'
 import { Sidebar } from './Sidebar'
 import { TopBar } from './TopBar'
 import { Footer } from './Footer'
+import { GraduationCap } from 'lucide-react'
 
 export function AppLayout() {
   const { isAuthenticated, isLoading } = useAuth()
@@ -11,8 +12,20 @@ export function AppLayout() {
 
   if (isLoading) {
     return (
-      <div className="flex h-screen items-center justify-center">
-        <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
+      <div className="flex h-screen flex-col items-center justify-center gap-4 bg-background">
+        <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-primary shadow-lg shadow-primary/30">
+          <GraduationCap className="h-7 w-7 text-primary-foreground" />
+        </div>
+        <div className="h-1 w-32 overflow-hidden rounded-full bg-muted">
+          <div className="h-full w-1/2 rounded-full bg-primary animate-[loading_1.2s_ease-in-out_infinite]" />
+        </div>
+        <p className="text-sm text-muted-foreground">Loading…</p>
+        <style>{`
+          @keyframes loading {
+            0%   { transform: translateX(-100%); }
+            100% { transform: translateX(300%); }
+          }
+        `}</style>
       </div>
     )
   }
@@ -28,16 +41,14 @@ export function AppLayout() {
         <Sidebar />
       </div>
 
-      {/* Mobile sidebar — overlay */}
+      {/* Mobile sidebar — overlay with smooth slide */}
       {sidebarOpen && (
         <>
-          {/* Backdrop */}
           <div
-            className="fixed inset-0 z-40 bg-black/50 md:hidden"
+            className="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm md:hidden"
             onClick={() => setSidebarOpen(false)}
           />
-          {/* Sidebar panel */}
-          <div className="fixed inset-y-0 left-0 z-50 md:hidden">
+          <div className="fixed inset-y-0 left-0 z-50 md:hidden animate-slide-up">
             <Sidebar onNavClick={() => setSidebarOpen(false)} />
           </div>
         </>
@@ -45,7 +56,7 @@ export function AppLayout() {
 
       <div className="flex flex-1 flex-col overflow-hidden">
         <TopBar onMenuClick={() => setSidebarOpen((v) => !v)} />
-        <main className="flex-1 overflow-auto p-6">
+        <main className="flex-1 overflow-auto p-6 animate-fade-in">
           <Outlet />
         </main>
         <Footer />
