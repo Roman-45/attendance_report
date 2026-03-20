@@ -6,12 +6,15 @@ import com.auca.attendance.entity.Notification;
 import com.auca.attendance.entity.User;
 import com.auca.attendance.exception.ResourceNotFoundException;
 import com.auca.attendance.repository.NotificationRepository;
+import com.auca.attendance.service.SseEmitterService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
 import java.util.List;
 
@@ -22,6 +25,20 @@ import java.util.List;
 public class NotificationController {
 
     private final NotificationRepository notificationRepository;
+    private final SseEmitterService sseEmitterService;
+
+    /** SSE stream — authenticated via ?token= query param since EventSource cannot set headers */
+    @GetMapping(value = "/stream", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
+    public SseEmitter stream(@AuthenticationPrincipal User user) {
+        return sseEmitterService.register(user.getId());
+    }
+
+    @Transactional(readOnly = true)
+    @GetMapping("/unread-count")
+    public ResponseEntity<ApiResponse<Long>> unreadCount(@AuthenticationPrincipal User user) {
+        long count = notificationRepository.countByRecipientIdAndIsReadFalse(user.getId());
+        return ResponseEntity.ok(ApiResponse.success(count));
+    }
 
     @Transactional(readOnly = true)
     @GetMapping

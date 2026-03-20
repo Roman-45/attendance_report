@@ -8,6 +8,7 @@ import { Card, CardContent } from '@/components/ui/card'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { Badge } from '@/components/ui/badge'
 import { Search } from 'lucide-react'
+import { SkeletonRow } from '@/components/ui/skeleton'
 import { format } from 'date-fns'
 
 export default function AuditLog() {
@@ -32,7 +33,7 @@ export default function AuditLog() {
       </div>
 
       <Card>
-        <CardContent className="p-0">
+        <CardContent className="p-0 overflow-x-auto">
           <Table>
             <TableHeader>
               <TableRow>
@@ -40,12 +41,12 @@ export default function AuditLog() {
                 <TableHead>Entity</TableHead>
                 <TableHead>Performed By</TableHead>
                 <TableHead>Date</TableHead>
-                <TableHead>Details</TableHead>
+                <TableHead className="hidden md:table-cell">Details</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {isLoading ? (
-                <TableRow><TableCell colSpan={5} className="text-center py-8">Loading...</TableCell></TableRow>
+                Array.from({ length: 5 }).map((_, i) => <SkeletonRow key={i} cols={5} />)
               ) : logs.length === 0 ? (
                 <TableRow><TableCell colSpan={5} className="text-center py-8 text-muted-foreground">No audit entries</TableCell></TableRow>
               ) : (
@@ -55,7 +56,7 @@ export default function AuditLog() {
                     <TableCell>{log.entityType} #{log.entityId}</TableCell>
                     <TableCell>{log.performedBy}</TableCell>
                     <TableCell>{format(new Date(log.performedAt), 'MMM d, yyyy HH:mm')}</TableCell>
-                    <TableCell className="max-w-xs truncate">{log.details}</TableCell>
+                    <TableCell className="max-w-xs truncate hidden md:table-cell">{log.details}</TableCell>
                   </TableRow>
                 ))
               )}

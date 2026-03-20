@@ -11,6 +11,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '
 import { Badge } from '@/components/ui/badge'
 import { useToast } from '@/hooks/use-toast'
 import { Plus, Users } from 'lucide-react'
+import { SkeletonRow } from '@/components/ui/skeleton'
 import { format } from 'date-fns'
 import { EnrollmentDialog } from '@/components/EnrollmentDialog'
 
@@ -66,7 +67,7 @@ export default function Modules() {
       </div>
 
       <Card>
-        <CardContent className="p-0">
+        <CardContent className="p-0 overflow-x-auto">
           <Table>
             <TableHeader>
               <TableRow>
@@ -80,7 +81,7 @@ export default function Modules() {
             </TableHeader>
             <TableBody>
               {isLoading ? (
-                <TableRow><TableCell colSpan={6} className="text-center py-8">Loading...</TableCell></TableRow>
+                Array.from({ length: 4 }).map((_, i) => <SkeletonRow key={i} cols={6} />)
               ) : modules.length === 0 ? (
                 <TableRow><TableCell colSpan={6} className="text-center py-8 text-muted-foreground">No modules found</TableCell></TableRow>
               ) : (
@@ -123,7 +124,7 @@ export default function Modules() {
             <DialogTitle>{editModule ? 'Edit Module' : 'Add Module'}</DialogTitle>
           </DialogHeader>
           <form onSubmit={(e) => { e.preventDefault(); saveMutation.mutate(form) }} className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label>Code</Label>
                 <Input value={form.code} onChange={(e) => setForm(f => ({ ...f, code: e.target.value }))} required disabled={!!editModule} />
@@ -137,7 +138,7 @@ export default function Modules() {
               <Label>Description</Label>
               <Input value={form.description} onChange={(e) => setForm(f => ({ ...f, description: e.target.value }))} />
             </div>
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label>Start Date</Label>
                 <Input type="date" value={form.startDate} onChange={(e) => setForm(f => ({ ...f, startDate: e.target.value }))} required />

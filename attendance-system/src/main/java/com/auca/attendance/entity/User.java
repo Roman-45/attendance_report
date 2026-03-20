@@ -75,6 +75,11 @@ public class User implements UserDetails {
     @Column(name = "google_id", length = 100, unique = true)
     private String googleId;
 
+    /** Admin-controlled flag — deactivated accounts cannot log in. */
+    @Column(nullable = false)
+    @Builder.Default
+    private Boolean active = true;
+
     @PrePersist
     protected void onCreate() {
         createdAt = OffsetDateTime.now();
@@ -111,5 +116,5 @@ public class User implements UserDetails {
 
     @JsonIgnore
     @Override
-    public boolean isEnabled() { return Boolean.TRUE.equals(emailVerified); }
+    public boolean isEnabled() { return Boolean.TRUE.equals(emailVerified) && Boolean.TRUE.equals(active); }
 }

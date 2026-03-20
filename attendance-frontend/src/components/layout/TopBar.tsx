@@ -15,7 +15,10 @@ import {
 } from '@/components/ui/dropdown-menu'
 import { useQuery } from '@tanstack/react-query'
 import client from '@/api/client'
-import { Search, Bell, X, Menu, UserCircle, LogOut } from 'lucide-react'
+import { useNotificationStream } from '@/hooks/useNotificationStream'
+import { useToast } from '@/hooks/use-toast'
+import { useTheme } from '@/context/ThemeContext'
+import { Search, Bell, X, Menu, UserCircle, LogOut, Sun, Moon } from 'lucide-react'
 
 interface SearchResult {
   type: 'student' | 'module' | 'page'
@@ -36,6 +39,7 @@ const PAGE_RESULTS: SearchResult[] = [
   { type: 'page', label: 'Marks & Grades', description: 'Manage marks & compute grades', route: '/marks' },
   { type: 'page', label: 'Reports', description: 'Download reports (Excel/PDF)', route: '/reports' },
   { type: 'page', label: 'Notifications', description: 'View notifications', route: '/notifications' },
+  { type: 'page', label: 'User Management', description: 'Manage roles and account status', route: '/users' },
   { type: 'page', label: 'Audit Log', description: 'View audit trail', route: '/audit-log' },
   { type: 'page', label: 'My Portal', description: 'Student self-service', route: '/portal' },
   { type: 'page', label: 'Profile & Settings', description: 'Manage your profile', route: '/profile' },
@@ -43,6 +47,7 @@ const PAGE_RESULTS: SearchResult[] = [
 
 export function TopBar({ onMenuClick }: TopBarProps) {
   const { user, hasRole, logout } = useAuth()
+  const { theme, toggleTheme } = useTheme()
   const navigate = useNavigate()
   const [query, setQuery] = useState('')
   const [open, setOpen] = useState(false)
@@ -50,11 +55,23 @@ export function TopBar({ onMenuClick }: TopBarProps) {
   const inputRef = useRef<HTMLInputElement>(null)
   const dropdownRef = useRef<HTMLDivElement>(null)
 
+  const isAdmin = hasRole('ADMIN')
+  const { toast } = useToast()
+
+  // Fetch initial unread count — SSE will invalidate this query in real time
   const { data: unreadCount = 0 } = useQuery({
     queryKey: ['unread-notification-count'],
     queryFn: () => client.get('/notifications/unread-count').then(r => r.data.data).catch(() => 0),
-    refetchInterval: 30_000,
-    enabled: hasRole('ADMIN'),
+    enabled: isAdmin,
+    // No polling — SSE events trigger invalidation instead
+  })
+
+  // Real-time push: invalidates the unread count + shows toast when a notification arrives
+  useNotificationStream(isAdmin, (payload) => {
+    toast({
+      title: payload.title ?? 'New Notification',
+      description: payload.message ?? (payload.studentName ? `Student: ${payload.studentName}` : 'You have a new alert'),
+    })
   })
 
   useEffect(() => {
@@ -218,8 +235,22 @@ export function TopBar({ onMenuClick }: TopBarProps) {
         )}
       </div>
 
-      {/* Right side: notifications + user dropdown */}
+      {/* Right side: theme toggle + notifications + user dropdown */}
       <div className="flex items-center gap-2 md:gap-3 ml-2 md:ml-4">
+        {/* Dark / Light mode toggle */}
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={toggleTheme}
+          aria-label={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
+          title={theme === 'dark' ? 'Light mode' : 'Dark mode'}
+        >
+          {theme === 'dark'
+            ? <Sun className="h-4 w-4" />
+            : <Moon className="h-4 w-4" />
+          }
+        </Button>
+
         {hasRole('ADMIN') && (
           <Button
             variant="ghost"

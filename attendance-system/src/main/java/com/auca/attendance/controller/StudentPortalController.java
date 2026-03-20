@@ -5,9 +5,13 @@ import com.auca.attendance.dto.response.AttendanceRecordResponse;
 import com.auca.attendance.dto.response.EnrollmentResponse;
 import com.auca.attendance.dto.response.MarkEntryResponse;
 import com.auca.attendance.dto.response.StudentResponse;
+import com.auca.attendance.entity.Student;
 import com.auca.attendance.entity.User;
+import com.auca.attendance.service.ReportGenerationService;
 import com.auca.attendance.service.StudentPortalService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -28,6 +32,7 @@ import java.util.Map;
 public class StudentPortalController {
 
     private final StudentPortalService portalService;
+    private final ReportGenerationService reportService;
 
     /** GET /me/profile — student's own profile and account status. */
     @GetMapping("/profile")
@@ -68,11 +73,58 @@ public class StudentPortalController {
 
     /**
      * GET /me/absence-summary — per-module absence statistics.
-     * Shows absence %, configured threshold, and whether the threshold was exceeded.
      */
     @GetMapping("/absence-summary")
     public ResponseEntity<ApiResponse<List<Map<String, Object>>>> getMyAbsenceSummary(
             @AuthenticationPrincipal User currentUser) {
         return ResponseEntity.ok(ApiResponse.success(portalService.getMyAbsenceSummary(currentUser)));
+    }
+
+    // ── Self-service report downloads ──────────────────────────────────────
+
+    @GetMapping("/reports/attendance/excel")
+    public ResponseEntity<byte[]> myAttendanceExcel(
+            @AuthenticationPrincipal User currentUser) throws Exception {
+        Student student = portalService.resolveStudent(currentUser);
+        byte[] data = reportService.generateStudentAttendanceExcel(student.getId());
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=my_attendance.xlsx")
+                .contentType(MediaType.parseMediaType(
+                        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"))
+                .body(data);
+    }
+
+    @GetMapping("/reports/attendance/pdf")
+    public ResponseEntity<byte[]> myAttendancePdf(
+            @AuthenticationPrincipal User currentUser) throws Exception {
+        Student student = portalService.resolveStudent(currentUser);
+        byte[] data = reportService.generateStudentAttendancePdf(student.getId());
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=my_attendance.pdf")
+                .contentType(MediaType.APPLICATION_PDF)
+                .body(data);
+    }
+
+    @GetMapping("/reports/marks/excel")
+    public ResponseEntity<byte[]> myMarksExcel(
+            @AuthenticationPrincipal User currentUser) throws Exception {
+        Student student = portalService.resolveStudent(currentUser);
+        byte[] data = reportService.generateStudentMarksExcel(student.getId());
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=my_marks.xlsx")
+                .contentType(MediaType.parseMediaType(
+                        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"))
+                .body(data);
+    }
+
+    @GetMapping("/reports/marks/pdf")
+    public ResponseEntity<byte[]> myMarksPdf(
+            @AuthenticationPrincipal User currentUser) throws Exception {
+        Student student = portalService.resolveStudent(currentUser);
+        byte[] data = reportService.generateStudentMarksPdf(student.getId());
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=my_marks.pdf")
+                .contentType(MediaType.APPLICATION_PDF)
+                .body(data);
     }
 }

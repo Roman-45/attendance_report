@@ -12,6 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Badge } from '@/components/ui/badge'
 import { useToast } from '@/hooks/use-toast'
 import { Plus, PenLine, Calculator } from 'lucide-react'
+import { SkeletonRow } from '@/components/ui/skeleton'
 
 export default function Marks() {
   const [selectedModuleId, setSelectedModuleId] = useState<string>('')
@@ -87,9 +88,9 @@ export default function Marks() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <h1 className="text-3xl font-bold tracking-tight">Marks & Grades</h1>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
           {selectedModuleId && (
             <>
               <Button variant="outline" onClick={() => computeGradesMutation.mutate()} disabled={computeGradesMutation.isPending}>
@@ -118,7 +119,7 @@ export default function Marks() {
       {selectedModuleId && (
         <Card>
           <CardHeader><CardTitle>Mark Columns</CardTitle></CardHeader>
-          <CardContent className="p-0">
+          <CardContent className="p-0 overflow-x-auto">
             <Table>
               <TableHeader>
                 <TableRow>
@@ -131,7 +132,7 @@ export default function Marks() {
               </TableHeader>
               <TableBody>
                 {isLoading ? (
-                  <TableRow><TableCell colSpan={5} className="text-center py-8">Loading...</TableCell></TableRow>
+                  Array.from({ length: 4 }).map((_, i) => <SkeletonRow key={i} cols={5} />)
                 ) : columns.length === 0 ? (
                   <TableRow><TableCell colSpan={5} className="text-center py-8 text-muted-foreground">No mark columns</TableCell></TableRow>
                 ) : (
@@ -177,7 +178,7 @@ export default function Marks() {
                 </SelectContent>
               </Select>
             </div>
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label>Max Mark</Label>
                 <Input type="number" value={columnForm.maxMark} onChange={(e) => setColumnForm(f => ({ ...f, maxMark: parseInt(e.target.value) }))} required />

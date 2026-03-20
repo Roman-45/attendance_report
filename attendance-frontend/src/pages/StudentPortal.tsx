@@ -13,9 +13,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import { BookOpen, ClipboardCheck, AlertTriangle, Award } from 'lucide-react'
+import { Button } from '@/components/ui/button'
+import { BookOpen, ClipboardCheck, AlertTriangle, Award, FileSpreadsheet, FileText } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { GradientStatCard } from './Dashboard'
+import { useToast } from '@/hooks/use-toast'
 
 type Tab = 'overview' | 'modules' | 'attendance' | 'marks'
 
@@ -34,11 +36,34 @@ const tabs: { key: Tab; label: string; path: string }[] = [
   { key: 'marks', label: 'My Marks', path: '/portal/marks' },
 ]
 
+async function downloadBlob(url: string, filename: string) {
+  const resp = await client.get(url, { responseType: 'blob' })
+  const a = document.createElement('a')
+  a.href = URL.createObjectURL(new Blob([resp.data]))
+  a.download = filename
+  a.click()
+  URL.revokeObjectURL(a.href)
+}
+
 export default function StudentPortal() {
   const { user } = useAuth()
   const navigate = useNavigate()
   const activeTab = useActiveTab()
   const [moduleFilter, setModuleFilter] = useState<string>('all')
+  const [downloading, setDownloading] = useState<string | null>(null)
+  const { toast } = useToast()
+
+  const handleDownload = async (path: string, filename: string) => {
+    setDownloading(path)
+    try {
+      await downloadBlob(path, filename)
+      toast({ title: 'Downloaded successfully' })
+    } catch {
+      toast({ variant: 'destructive', title: 'Download failed' })
+    } finally {
+      setDownloading(null)
+    }
+  }
 
   const { data: profile } = useQuery({
     queryKey: ['me-profile'],
@@ -85,7 +110,7 @@ export default function StudentPortal() {
       </div>
 
       {/* Tab bar */}
-      <div className="flex gap-1 border-b">
+      <div className="flex gap-1 border-b overflow-x-auto -mx-1 px-1">
         {tabs.map(tab => (
           <button
             key={tab.key}
@@ -153,7 +178,7 @@ export default function StudentPortal() {
           {/* Module summary */}
           <Card className="shadow-sm">
             <CardHeader><CardTitle>Module Summary</CardTitle></CardHeader>
-            <CardContent className="p-0">
+            <CardContent className="p-0 overflow-x-auto">
               <Table>
                 <TableHeader>
                   <TableRow>
@@ -191,7 +216,7 @@ export default function StudentPortal() {
           {/* Recent attendance */}
           <Card className="shadow-sm">
             <CardHeader><CardTitle>Recent Attendance (last 10)</CardTitle></CardHeader>
-            <CardContent className="p-0">
+            <CardContent className="p-0 overflow-x-auto">
               <Table>
                 <TableHeader>
                   <TableRow>
@@ -227,7 +252,7 @@ export default function StudentPortal() {
       {activeTab === 'modules' && (
         <Card className="shadow-sm">
           <CardHeader><CardTitle>My Enrolled Modules</CardTitle></CardHeader>
-          <CardContent className="p-0">
+          <CardContent className="p-0 overflow-x-auto">
             <Table>
               <TableHeader>
                 <TableRow>
@@ -272,10 +297,11 @@ export default function StudentPortal() {
       {/* ── My Attendance ────────────────────────────────────── */}
       {activeTab === 'attendance' && (
         <div className="space-y-4">
-          <div className="flex items-center gap-3">
-            <span className="text-sm font-medium">Filter by module:</span>
+          <div className="flex items-center justify-between gap-3 flex-wrap">
+            <div className="flex items-center gap-3">
+              <span className="text-sm font-medium">Filter by module:</span>
             <Select value={moduleFilter} onValueChange={setModuleFilter}>
-              <SelectTrigger className="w-56">
+              <SelectTrigger className="w-full sm:w-56">
                 <SelectValue placeholder="All modules" />
               </SelectTrigger>
               <SelectContent>
@@ -287,17 +313,41 @@ export default function StudentPortal() {
                 ))}
               </SelectContent>
             </Select>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="text-xs text-muted-foreground mr-1">Export:</span>
+              <Button
+                variant="outline" size="sm"
+                onClick={() => handleDownload('/me/reports/attendance/excel', 'my_attendance.xlsx')}
+                disabled={!!downloading}
+              >
+                {downloading === '/me/reports/attendance/excel'
+                  ? <span className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-current border-t-transparent" />
+                  : <><FileSpreadsheet className="h-3.5 w-3.5 mr-1" /> Excel</>
+                }
+              </Button>
+              <Button
+                variant="outline" size="sm"
+                onClick={() => handleDownload('/me/reports/attendance/pdf', 'my_attendance.pdf')}
+                disabled={!!downloading}
+              >
+                {downloading === '/me/reports/attendance/pdf'
+                  ? <span className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-current border-t-transparent" />
+                  : <><FileText className="h-3.5 w-3.5 mr-1" /> PDF</>
+                }
+              </Button>
+            </div>
           </div>
 
           <Card className="shadow-sm">
             <CardHeader><CardTitle>Attendance Records</CardTitle></CardHeader>
-            <CardContent className="p-0">
+            <CardContent className="p-0 overflow-x-auto">
               <Table>
                 <TableHeader>
                   <TableRow>
                     <TableHead>Date</TableHead>
                     <TableHead>Module</TableHead>
-                    <TableHead>Period</TableHead>
+                    <TableHead className="hidden sm:table-cell">Period</TableHead>
                     <TableHead>Status</TableHead>
                     <TableHead>Flag</TableHead>
                   </TableRow>
@@ -310,7 +360,7 @@ export default function StudentPortal() {
                       <TableRow key={r.id ?? idx}>
                         <TableCell>{r.sessionDate}</TableCell>
                         <TableCell className="text-muted-foreground">{r.moduleName ?? '—'}</TableCell>
-                        <TableCell className="text-muted-foreground">{r.period ?? '—'}</TableCell>
+                        <TableCell className="text-muted-foreground hidden sm:table-cell">{r.period ?? '—'}</TableCell>
                         <TableCell>
                           <Badge variant={r.status === 'PRESENT' ? 'default' : r.status === 'EXCUSED' ? 'secondary' : 'destructive'}>
                             {r.status}
@@ -334,16 +384,42 @@ export default function StudentPortal() {
       {/* ── My Marks ─────────────────────────────────────────── */}
       {activeTab === 'marks' && (
         <Card className="shadow-sm">
-          <CardHeader><CardTitle>My Marks</CardTitle></CardHeader>
-          <CardContent className="p-0">
+          <CardHeader>
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <CardTitle>My Marks</CardTitle>
+              <div className="flex items-center gap-2 flex-wrap">
+                <Button
+                  variant="outline" size="sm"
+                  onClick={() => handleDownload('/me/reports/marks/excel', 'my_marks.xlsx')}
+                  disabled={!!downloading}
+                >
+                  {downloading === '/me/reports/marks/excel'
+                    ? <span className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-current border-t-transparent" />
+                    : <><FileSpreadsheet className="h-3.5 w-3.5 mr-1" /> Excel</>
+                  }
+                </Button>
+                <Button
+                  variant="outline" size="sm"
+                  onClick={() => handleDownload('/me/reports/marks/pdf', 'my_marks.pdf')}
+                  disabled={!!downloading}
+                >
+                  {downloading === '/me/reports/marks/pdf'
+                    ? <span className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-current border-t-transparent" />
+                    : <><FileText className="h-3.5 w-3.5 mr-1" /> PDF</>
+                  }
+                </Button>
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent className="p-0 overflow-x-auto">
             <Table>
               <TableHeader>
                 <TableRow>
                   <TableHead>Module</TableHead>
                   <TableHead>Assessment</TableHead>
-                  <TableHead>Type</TableHead>
+                  <TableHead className="hidden sm:table-cell">Type</TableHead>
                   <TableHead>Score</TableHead>
-                  <TableHead>Max</TableHead>
+                  <TableHead className="hidden sm:table-cell">Max</TableHead>
                   <TableHead>Weighted %</TableHead>
                 </TableRow>
               </TableHeader>
@@ -359,11 +435,11 @@ export default function StudentPortal() {
                       <TableRow key={m.id ?? idx}>
                         <TableCell className="font-medium">{m.moduleName ?? '—'}</TableCell>
                         <TableCell>{m.columnName ?? '—'}</TableCell>
-                        <TableCell>
+                        <TableCell className="hidden sm:table-cell">
                           <Badge variant="outline" className="text-xs">{m.markType ?? '—'}</Badge>
                         </TableCell>
                         <TableCell className="font-medium">{m.score}</TableCell>
-                        <TableCell className="text-muted-foreground">{m.maxMark ?? '—'}</TableCell>
+                        <TableCell className="text-muted-foreground hidden sm:table-cell">{m.maxMark ?? '—'}</TableCell>
                         <TableCell>{weighted != null ? `${weighted}%` : '—'}</TableCell>
                       </TableRow>
                     )

@@ -4,7 +4,7 @@ import { useSidebar } from '@/context/SidebarContext'
 import {
   LayoutDashboard, Users, BookOpen, ClipboardCheck,
   Award, FileText, Bell, Shield, GraduationCap,
-  LogOut, UserCircle, ChevronLeft
+  LogOut, UserCircle, ChevronLeft, UserCog
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar'
@@ -105,6 +105,7 @@ export function Sidebar({ onNavClick }: SidebarProps) {
               <>
                 <div className={cn("border-t border-slate-700/50 my-2", collapsed ? "mx-1" : "mx-0")} />
                 <NavItem to="/notifications" icon={Bell} label="Notifications" collapsed={collapsed} navItem={navItem} activeNavItem={activeNavItem} onNavClick={onNavClick} />
+                <NavItem to="/users" icon={UserCog} label="User Management" collapsed={collapsed} navItem={navItem} activeNavItem={activeNavItem} onNavClick={onNavClick} />
                 <NavItem to="/audit-log" icon={Shield} label="Audit Log" collapsed={collapsed} navItem={navItem} activeNavItem={activeNavItem} onNavClick={onNavClick} />
               </>
             )}

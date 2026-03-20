@@ -44,7 +44,7 @@ public class AuthController {
             return ResponseEntity.badRequest()
                     .body(ApiResponse.error("Missing Google credential"));
         }
-        return ResponseEntity.ok(ApiResponse.success(authService.googleLogin(credential), "Login successful"));
+        return ResponseEntity.ok(ApiResponse.success("Login successful", authService.googleLogin(credential)));
     }
 
     /** Self-service registration for STUDENT or INSTRUCTOR roles. Sends verification email. */

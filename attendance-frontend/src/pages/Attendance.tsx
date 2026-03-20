@@ -12,6 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Badge } from '@/components/ui/badge'
 import { useToast } from '@/hooks/use-toast'
 import { Plus, ClipboardCheck } from 'lucide-react'
+import { SkeletonRow } from '@/components/ui/skeleton'
 
 export default function Attendance() {
   const [selectedModuleId, setSelectedModuleId] = useState<string>('')
@@ -108,7 +109,7 @@ export default function Attendance() {
           <CardHeader>
             <CardTitle>Sessions</CardTitle>
           </CardHeader>
-          <CardContent className="p-0">
+          <CardContent className="p-0 overflow-x-auto">
             <Table>
               <TableHeader>
                 <TableRow>
@@ -120,7 +121,7 @@ export default function Attendance() {
               </TableHeader>
               <TableBody>
                 {sessionsLoading ? (
-                  <TableRow><TableCell colSpan={4} className="text-center py-8">Loading...</TableCell></TableRow>
+                  Array.from({ length: 4 }).map((_, i) => <SkeletonRow key={i} cols={4} />)
                 ) : sessions.length === 0 ? (
                   <TableRow><TableCell colSpan={4} className="text-center py-8 text-muted-foreground">No sessions yet</TableCell></TableRow>
                 ) : (
@@ -152,7 +153,7 @@ export default function Attendance() {
               <Label>Date</Label>
               <Input type="date" value={sessionForm.sessionDate} onChange={(e) => setSessionForm(f => ({ ...f, sessionDate: e.target.value }))} required />
             </div>
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label>Start Time</Label>
                 <Input type="time" value={sessionForm.startTime} onChange={(e) => setSessionForm(f => ({ ...f, startTime: e.target.value }))} required />

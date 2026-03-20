@@ -114,25 +114,139 @@ export default function Profile() {
     }
   }
 
+  // Onboarding wizard state
+  const [wizardStep, setWizardStep] = useState(0) // 0 = photo, 1 = name, 2 = done
+
+  const handleWizardPhotoNext = () => setWizardStep(1)
+
+  const handleWizardNameSave = async () => {
+    if (!name.trim()) return
+    setNameSaving(true)
+    try {
+      await client.patch('/profile', { name: name.trim() })
+      await refreshUser()
+      toast({ title: 'Name updated successfully' })
+      setWizardStep(2)
+    } catch {
+      toast({ title: 'Failed to update name', variant: 'destructive' })
+    } finally {
+      setNameSaving(false)
+    }
+  }
+
+  // Onboarding wizard for new Google users
+  if (profileIncomplete) {
+    return (
+      <div className="flex items-center justify-center min-h-[60vh]">
+        <div className="w-full max-w-md space-y-6">
+          <div className="text-center">
+            <GraduationCap className="h-10 w-10 text-primary mx-auto mb-3" />
+            <h1 className="text-2xl font-bold">Welcome to AUCA</h1>
+            <p className="text-muted-foreground text-sm mt-1">Let's set up your profile in a few steps</p>
+          </div>
+
+          {/* Progress dots */}
+          <div className="flex items-center justify-center gap-2">
+            {[0, 1, 2].map(i => (
+              <div
+                key={i}
+                className={`h-2 rounded-full transition-all ${
+                  i === wizardStep ? 'w-8 bg-primary' : i < wizardStep ? 'w-2 bg-primary/60' : 'w-2 bg-muted'
+                }`}
+              />
+            ))}
+          </div>
+
+          {/* Step 0: Upload Photo */}
+          {wizardStep === 0 && (
+            <Card className="shadow-sm">
+              <CardHeader>
+                <CardTitle className="text-base text-center">Upload a profile photo</CardTitle>
+              </CardHeader>
+              <CardContent className="flex flex-col items-center gap-4">
+                <div
+                  className="relative group cursor-pointer ring-4 ring-background rounded-full"
+                  onClick={handlePhotoClick}
+                >
+                  <Avatar className="h-24 w-24">
+                    <AvatarImage src={getPhotoSrc()} alt={user?.name} />
+                    <AvatarFallback className="text-xl bg-primary text-primary-foreground">
+                      {initials}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div className="absolute inset-0 flex items-center justify-center rounded-full bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity">
+                    {photoUploading
+                      ? <span className="h-5 w-5 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                      : <Camera className="h-5 w-5 text-white" />
+                    }
+                  </div>
+                </div>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/jpeg,image/png,image/gif"
+                  className="hidden"
+                  onChange={handlePhotoChange}
+                />
+                <p className="text-xs text-muted-foreground">Click to upload — JPG, PNG or GIF</p>
+                <div className="flex gap-3">
+                  <Button variant="outline" onClick={handleWizardPhotoNext}>Skip</Button>
+                  <Button onClick={handleWizardPhotoNext} disabled={photoUploading}>
+                    {getPhotoSrc() ? 'Next' : 'Skip for now'}
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Step 1: Set Name */}
+          {wizardStep === 1 && (
+            <Card className="shadow-sm">
+              <CardHeader>
+                <CardTitle className="text-base text-center">What's your full name?</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <Input
+                  value={name}
+                  onChange={e => setName(e.target.value)}
+                  onKeyDown={e => e.key === 'Enter' && handleWizardNameSave()}
+                  placeholder="Enter your full name"
+                  autoFocus
+                />
+                <div className="flex gap-3 justify-end">
+                  <Button variant="outline" onClick={() => setWizardStep(0)}>Back</Button>
+                  <Button onClick={handleWizardNameSave} disabled={nameSaving || !name.trim()}>
+                    {nameSaving ? 'Saving…' : 'Continue'}
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Step 2: Done */}
+          {wizardStep === 2 && (
+            <Card className="shadow-sm">
+              <CardContent className="flex flex-col items-center gap-4 py-8">
+                <CheckCircle className="h-12 w-12 text-emerald-500" />
+                <div className="text-center">
+                  <h2 className="text-lg font-semibold">You're all set!</h2>
+                  <p className="text-sm text-muted-foreground mt-1">Your profile is ready. You can always update it later.</p>
+                </div>
+                <Button onClick={() => navigate('/')}>Go to Dashboard</Button>
+              </CardContent>
+            </Card>
+          )}
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="space-y-6 max-w-2xl">
       <div>
         <h1 className="text-3xl font-bold tracking-tight">Profile & Settings</h1>
         <p className="text-muted-foreground">Manage your account information</p>
       </div>
-
-      {/* Google signup completion banner */}
-      {profileIncomplete && (
-        <div className="flex items-start gap-3 rounded-xl border border-primary/20 bg-primary/5 px-4 py-3">
-          <GraduationCap className="h-5 w-5 text-primary mt-0.5 shrink-0" />
-          <div>
-            <p className="text-sm font-medium text-primary">Complete your profile</p>
-            <p className="text-xs text-muted-foreground mt-0.5">
-              You signed in with Google. Please update your full name below to finish setting up your account.
-            </p>
-          </div>
-        </div>
-      )}
 
       {/* Profile header card with gradient banner */}
       <div className="rounded-xl overflow-hidden border shadow-sm">

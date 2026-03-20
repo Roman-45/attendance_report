@@ -85,9 +85,14 @@ export interface MarkEntry {
 
 export interface Notification {
   id: number
-  message: string
   type: string
-  read: boolean
+  title: string
+  message: string
+  isRead: boolean
+  studentId?: number
+  studentName?: string
+  moduleId?: number
+  moduleName?: string
   createdAt: string
 }
 

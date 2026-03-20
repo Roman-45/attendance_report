@@ -1,7 +1,7 @@
 import { useState, useRef } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import client from '@/api/client'
-import type { Student } from '@/types'
+import type { Student, Module, Enrollment } from '@/types'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -9,26 +9,16 @@ import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { YearPicker } from '@/components/ui/year-picker'
 import { useToast } from '@/hooks/use-toast'
-import { Plus, Search, Upload, Download, ChevronLeft, ChevronRight } from 'lucide-react'
+import { Plus, Search, Upload, Download, ChevronLeft, ChevronRight, BookOpen, Trash2, UserPlus } from 'lucide-react'
+import { SkeletonRow } from '@/components/ui/skeleton'
 
 interface ImportResult {
   imported: number
   skipped: number
   errors: Array<{ row: number; studentId: string; reason: string }>
-}
-
-function SkeletonRow({ cols }: { cols: number }) {
-  return (
-    <TableRow className="animate-pulse">
-      {Array.from({ length: cols }).map((_, i) => (
-        <TableCell key={i}>
-          <div className="h-4 rounded bg-muted w-3/4" />
-        </TableCell>
-      ))}
-    </TableRow>
-  )
 }
 
 export default function Students() {
@@ -46,6 +36,11 @@ export default function Students() {
   })
   const [importResult, setImportResult] = useState<ImportResult | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
+
+  // Enrollment management state
+  const [enrollmentStudent, setEnrollmentStudent] = useState<Student | null>(null)
+  const [enrollModuleId, setEnrollModuleId] = useState<string>('')
+
   const queryClient = useQueryClient()
   const { toast } = useToast()
 
@@ -53,6 +48,21 @@ export default function Students() {
     queryKey: ['students', page, search],
     queryFn: () =>
       client.get('/students', { params: { page, size: 20, search: search || undefined } }).then(r => r.data.data),
+  })
+
+  // Fetch enrollments for the selected student
+  const { data: enrollments = [], isLoading: enrollmentsLoading } = useQuery<Enrollment[]>({
+    queryKey: ['student-enrollments', enrollmentStudent?.id],
+    queryFn: () =>
+      client.get(`/students/${enrollmentStudent!.id}/enrollments`).then(r => r.data.data),
+    enabled: !!enrollmentStudent,
+  })
+
+  // Fetch all modules for the enroll dropdown
+  const { data: allModules = [] } = useQuery<Module[]>({
+    queryKey: ['modules'],
+    queryFn: () => client.get('/modules').then(r => r.data.data),
+    enabled: !!enrollmentStudent,
   })
 
   const saveMutation = useMutation({
@@ -94,6 +104,37 @@ export default function Students() {
     },
   })
 
+  const enrollMutation = useMutation({
+    mutationFn: ({ moduleId, studentDbId }: { moduleId: number; studentDbId: number }) =>
+      client.post(`/modules/${moduleId}/enrollments`, { studentIds: [studentDbId] }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['student-enrollments', enrollmentStudent?.id] })
+      setEnrollModuleId('')
+      toast({ title: 'Student enrolled successfully' })
+    },
+    onError: (err: unknown) => {
+      const msg =
+        (err as { response?: { data?: { message?: string } } })?.response?.data?.message ||
+        'Enrollment failed'
+      toast({ variant: 'destructive', title: 'Error', description: msg })
+    },
+  })
+
+  const unenrollMutation = useMutation({
+    mutationFn: ({ moduleId, studentDbId }: { moduleId: number; studentDbId: number }) =>
+      client.delete(`/modules/${moduleId}/enrollments/${studentDbId}`),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['student-enrollments', enrollmentStudent?.id] })
+      toast({ title: 'Student unenrolled' })
+    },
+    onError: (err: unknown) => {
+      const msg =
+        (err as { response?: { data?: { message?: string } } })?.response?.data?.message ||
+        'Failed to unenroll'
+      toast({ variant: 'destructive', title: 'Error', description: msg })
+    },
+  })
+
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (file) importMutation.mutate(file)
@@ -122,10 +163,24 @@ export default function Students() {
     setDialogOpen(true)
   }
 
+  const openEnrollments = (s: Student) => {
+    setEnrollmentStudent(s)
+    setEnrollModuleId('')
+  }
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
     saveMutation.mutate(form)
   }
+
+  const handleEnroll = () => {
+    if (!enrollModuleId || !enrollmentStudent) return
+    enrollMutation.mutate({ moduleId: Number(enrollModuleId), studentDbId: enrollmentStudent.id })
+  }
+
+  // Modules not yet enrolled in (for the dropdown)
+  const enrolledModuleIds = new Set(enrollments.map(e => e.moduleId))
+  const availableModules = allModules.filter(m => !enrolledModuleIds.has(m.id))
 
   const students: Student[] = data?.content ?? data ?? []
   const totalPages = data?.totalPages ?? 1
@@ -147,7 +202,7 @@ export default function Students() {
 
   return (
     <div className="space-y-6 animate-fade-in">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Students</h1>
           <p className="text-sm text-muted-foreground mt-1">
@@ -177,16 +232,16 @@ export default function Students() {
       </div>
 
       <Card>
-        <CardContent className="p-0">
+        <CardContent className="p-0 overflow-x-auto">
           <Table>
             <TableHeader>
               <TableRow>
                 <TableHead>Student ID</TableHead>
                 <TableHead>Name</TableHead>
-                <TableHead>Email</TableHead>
-                <TableHead>Program</TableHead>
-                <TableHead>Cohort</TableHead>
-                <TableHead className="w-24">Actions</TableHead>
+                <TableHead className="hidden sm:table-cell">Email</TableHead>
+                <TableHead className="hidden md:table-cell">Program</TableHead>
+                <TableHead className="hidden md:table-cell">Cohort</TableHead>
+                <TableHead className="w-32">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -204,19 +259,30 @@ export default function Students() {
                   <TableRow key={s.id}>
                     <TableCell className="font-mono text-xs">{s.studentId}</TableCell>
                     <TableCell className="font-medium">{s.name}</TableCell>
-                    <TableCell className="text-muted-foreground">{s.email}</TableCell>
-                    <TableCell>
+                    <TableCell className="hidden sm:table-cell text-muted-foreground">{s.email}</TableCell>
+                    <TableCell className="hidden md:table-cell">
                       {s.program ? (
                         <Badge variant="secondary">{s.program}</Badge>
                       ) : (
                         <span className="text-muted-foreground/50">—</span>
                       )}
                     </TableCell>
-                    <TableCell>{s.cohortYear}</TableCell>
+                    <TableCell className="hidden md:table-cell">{s.cohortYear}</TableCell>
                     <TableCell>
-                      <Button variant="ghost" size="sm" onClick={() => openEdit(s)}>
-                        Edit
-                      </Button>
+                      <div className="flex items-center gap-1">
+                        <Button variant="ghost" size="sm" onClick={() => openEdit(s)}>
+                          Edit
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="text-primary hover:text-primary"
+                          onClick={() => openEnrollments(s)}
+                          title="Manage module enrollments"
+                        >
+                          <BookOpen className="h-3.5 w-3.5" />
+                        </Button>
+                      </div>
                     </TableCell>
                   </TableRow>
                 ))
@@ -301,7 +367,7 @@ export default function Students() {
                 placeholder="jane@auca.ac.rw"
               />
             </div>
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-1.5">
                 <Label>Program</Label>
                 <Input
@@ -409,6 +475,103 @@ export default function Students() {
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setImportDialogOpen(false)}>Close</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Enrollment Management Dialog */}
+      <Dialog
+        open={!!enrollmentStudent}
+        onOpenChange={(open) => { if (!open) setEnrollmentStudent(null) }}
+      >
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <BookOpen className="h-4 w-4 text-primary" />
+              Module Enrollments — {enrollmentStudent?.name}
+            </DialogTitle>
+          </DialogHeader>
+
+          <div className="space-y-4">
+            {/* Enroll in a new module */}
+            <div className="rounded-lg border bg-muted/30 p-3 space-y-2">
+              <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Add to module</p>
+              <div className="flex gap-2">
+                <Select value={enrollModuleId} onValueChange={setEnrollModuleId}>
+                  <SelectTrigger className="flex-1">
+                    <SelectValue placeholder={
+                      availableModules.length === 0 ? 'Enrolled in all modules' : 'Select module…'
+                    } />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {availableModules.map(m => (
+                      <SelectItem key={m.id} value={String(m.id)}>
+                        <span className="font-mono text-xs mr-2 text-muted-foreground">{m.code}</span>
+                        {m.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <Button
+                  onClick={handleEnroll}
+                  disabled={!enrollModuleId || enrollMutation.isPending}
+                  size="sm"
+                >
+                  {enrollMutation.isPending ? (
+                    <span className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
+                  ) : (
+                    <><UserPlus className="h-3.5 w-3.5 mr-1" /> Enroll</>
+                  )}
+                </Button>
+              </div>
+            </div>
+
+            {/* Current enrollments list */}
+            <div>
+              <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-2">
+                Currently enrolled ({enrollments.length})
+              </p>
+              {enrollmentsLoading ? (
+                <div className="flex items-center justify-center py-6">
+                  <span className="h-5 w-5 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+                </div>
+              ) : enrollments.length === 0 ? (
+                <div className="text-center py-6 text-muted-foreground text-sm">
+                  <BookOpen className="h-6 w-6 mx-auto mb-2 opacity-30" />
+                  Not enrolled in any modules
+                </div>
+              ) : (
+                <div className="space-y-1.5 max-h-64 overflow-y-auto">
+                  {enrollments.map(e => (
+                    <div
+                      key={e.enrollmentId}
+                      className="flex items-center justify-between rounded-lg border bg-background px-3 py-2 group"
+                    >
+                      <div className="min-w-0">
+                        <p className="text-sm font-medium truncate">{e.moduleName}</p>
+                        <p className="text-xs text-muted-foreground">
+                          Enrolled {new Date(e.enrolledAt).toLocaleDateString()}
+                        </p>
+                      </div>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-7 w-7 text-muted-foreground hover:text-destructive opacity-0 group-hover:opacity-100 transition-opacity shrink-0"
+                        onClick={() => unenrollMutation.mutate({ moduleId: e.moduleId, studentDbId: enrollmentStudent!.id })}
+                        disabled={unenrollMutation.isPending}
+                        title="Remove from module"
+                      >
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setEnrollmentStudent(null)}>Close</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

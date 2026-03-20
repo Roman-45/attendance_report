@@ -58,7 +58,7 @@ export function AppLayout() {
 
         <div className="flex flex-1 flex-col overflow-hidden">
           <TopBar onMenuClick={() => setSidebarOpen((v) => !v)} />
-          <main className="flex-1 overflow-auto p-6 animate-fade-in">
+          <main className="flex-1 overflow-auto p-4 md:p-6 animate-fade-in">
             <Outlet />
           </main>
           <Footer />

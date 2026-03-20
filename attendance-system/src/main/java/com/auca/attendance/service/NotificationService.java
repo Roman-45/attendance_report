@@ -16,6 +16,8 @@ import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Map;
+
 @Service
 @RequiredArgsConstructor
 @Slf4j
@@ -26,14 +28,10 @@ public class NotificationService {
     private final StudentRepository studentRepository;
     private final ModuleRepository moduleRepository;
     private final JavaMailSender mailSender;
+    private final SseEmitterService sseEmitterService;
 
     /**
      * Notify all ADMIN users that a student has exceeded the module's absence threshold.
-     *
-     * @param studentId   student who crossed the threshold
-     * @param moduleId    module in which the threshold was crossed
-     * @param currentPct  current absence percentage (for the notification message)
-     * @param threshold   the configured threshold that was crossed
      */
     @Async
     @Transactional
@@ -59,6 +57,14 @@ public class NotificationService {
                     .module(module)
                     .build();
             notificationRepository.save(notification);
+
+            // Push real-time SSE event to this admin if they are connected
+            sseEmitterService.send(admin.getId(), Map.of(
+                    "type", "THRESHOLD_ALERT",
+                    "title", title,
+                    "message", message,
+                    "studentName", student.getName()
+            ));
 
             try {
                 SimpleMailMessage mail = new SimpleMailMessage();
@@ -96,6 +102,14 @@ public class NotificationService {
                     .module(module)
                     .build();
             notificationRepository.save(notification);
+
+            // Push real-time SSE event to this admin if they are connected
+            sseEmitterService.send(admin.getId(), Map.of(
+                    "type", "CONSECUTIVE_ABSENCE",
+                    "title", title,
+                    "message", message,
+                    "studentName", student.getName()
+            ));
 
             try {
                 SimpleMailMessage mail = new SimpleMailMessage();

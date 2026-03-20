@@ -17,6 +17,8 @@ import Notifications from '@/pages/Notifications'
 import AuditLog from '@/pages/AuditLog'
 import StudentPortal from '@/pages/StudentPortal'
 import Profile from '@/pages/Profile'
+import UserManagement from '@/pages/UserManagement'
+import NotFound from '@/pages/NotFound'
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -55,12 +57,13 @@ export default function App() {
               <Route path="/reports" element={<Reports />} />
               <Route path="/notifications" element={<Notifications />} />
               <Route path="/audit-log" element={<AuditLog />} />
+              <Route path="/users" element={<UserManagement />} />
               <Route path="/portal" element={<StudentPortal />} />
               <Route path="/portal/*" element={<StudentPortal />} />
               <Route path="/profile" element={<Profile />} />
             </Route>
             <Route path="/" element={<RoleRedirect />} />
-            <Route path="*" element={<Navigate to="/" replace />} />
+            <Route path="*" element={<NotFound />} />
           </Routes>
           <Toaster />
         </AuthProvider>
