@@ -20,4 +20,8 @@ public interface StudentRepository extends JpaRepository<Student, Long> {
 
     /** Finds the student whose login account matches the given user id. Used by the student portal. */
     Optional<Student> findByAccountId(Long userId);
+
+    Optional<Student> findByEmailAndDeletedAtIsNull(String email);
+
+    Optional<Student> findByStudentIdAndDeletedAtIsNull(String studentId);
 }

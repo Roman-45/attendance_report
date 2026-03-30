@@ -80,6 +80,20 @@ public class User implements UserDetails {
     @Builder.Default
     private Boolean active = true;
 
+    /** Unique token sent in the invitation email — used to accept the invite and set a password. */
+    @Column(name = "invitation_token", length = 100)
+    private String invitationToken;
+
+    /** The user (admin) who invited this user. */
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "invited_by")
+    @JsonIgnore
+    private User invitedBy;
+
+    /** When the invitation email was sent. */
+    @Column(name = "invitation_sent_at")
+    private LocalDateTime invitationSentAt;
+
     @PrePersist
     protected void onCreate() {
         createdAt = OffsetDateTime.now();

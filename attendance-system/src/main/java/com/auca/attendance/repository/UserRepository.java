@@ -29,4 +29,6 @@ public interface UserRepository extends JpaRepository<User, Long> {
     Page<User> searchByNameOrEmailAndRole(@Param("q") String query, @Param("role") Role role, Pageable pageable);
 
     Page<User> findByRole(Role role, Pageable pageable);
+
+    Optional<User> findByInvitationToken(String invitationToken);
 }
