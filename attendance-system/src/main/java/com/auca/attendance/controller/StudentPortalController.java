@@ -1,14 +1,13 @@
 package com.auca.attendance.controller;
 
-import com.auca.attendance.dto.response.ApiResponse;
-import com.auca.attendance.dto.response.AttendanceRecordResponse;
-import com.auca.attendance.dto.response.EnrollmentResponse;
-import com.auca.attendance.dto.response.MarkEntryResponse;
-import com.auca.attendance.dto.response.StudentResponse;
+import com.auca.attendance.dto.response.*;
 import com.auca.attendance.entity.Student;
 import com.auca.attendance.entity.User;
+import com.auca.attendance.service.ClaimService;
 import com.auca.attendance.service.ReportGenerationService;
+import com.auca.attendance.service.SeatingService;
 import com.auca.attendance.service.StudentPortalService;
+import com.auca.attendance.service.TeamService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
@@ -28,11 +27,14 @@ import java.util.Map;
 @RestController
 @RequestMapping("/api/v1/me")
 @RequiredArgsConstructor
-@PreAuthorize("hasRole('STUDENT')")
+@PreAuthorize("hasAnyRole('STUDENT','TEAM_LEADER')")
 public class StudentPortalController {
 
     private final StudentPortalService portalService;
     private final ReportGenerationService reportService;
+    private final TeamService teamService;
+    private final SeatingService seatingService;
+    private final ClaimService claimService;
 
     /** GET /me/profile — student's own profile and account status. */
     @GetMapping("/profile")
@@ -78,6 +80,32 @@ public class StudentPortalController {
     public ResponseEntity<ApiResponse<List<Map<String, Object>>>> getMyAbsenceSummary(
             @AuthenticationPrincipal User currentUser) {
         return ResponseEntity.ok(ApiResponse.success(portalService.getMyAbsenceSummary(currentUser)));
+    }
+
+    // ── Teams, Seating & Claims ────────────────────────────────────────────
+
+    /** GET /me/teams/{moduleId} — student's team in the given module. */
+    @GetMapping("/teams/{moduleId}")
+    public ResponseEntity<ApiResponse<TeamResponse>> getMyTeam(
+            @AuthenticationPrincipal User currentUser,
+            @PathVariable Long moduleId) {
+        Student student = portalService.resolveStudent(currentUser);
+        return ResponseEntity.ok(ApiResponse.success(teamService.getStudentTeam(student.getId(), moduleId)));
+    }
+
+    /** GET /me/seating/{moduleId} — student's own seat assignment. */
+    @GetMapping("/seating/{moduleId}")
+    public ResponseEntity<ApiResponse<SeatAssignmentResponse>> getMySeat(
+            @AuthenticationPrincipal User currentUser,
+            @PathVariable Long moduleId) {
+        return ResponseEntity.ok(ApiResponse.success(seatingService.getMySeat(moduleId, currentUser)));
+    }
+
+    /** GET /me/claims — all claims submitted by this student. */
+    @GetMapping("/claims")
+    public ResponseEntity<ApiResponse<List<ClaimResponse>>> getMyClaims(
+            @AuthenticationPrincipal User currentUser) {
+        return ResponseEntity.ok(ApiResponse.success(claimService.getMyClaims(currentUser)));
     }
 
     // ── Self-service report downloads ──────────────────────────────────────

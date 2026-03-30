@@ -1,16 +1,20 @@
 package com.auca.attendance.controller;
 
+import com.auca.attendance.dto.request.InviteTeamLeaderRequest;
 import com.auca.attendance.dto.response.ApiResponse;
 import com.auca.attendance.entity.User;
 import com.auca.attendance.enums.Role;
 import com.auca.attendance.exception.ResourceNotFoundException;
 import com.auca.attendance.repository.UserRepository;
+import com.auca.attendance.service.InvitationService;
+import jakarta.validation.Valid;
 import lombok.Builder;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -27,6 +31,7 @@ import java.util.Map;
 public class UserManagementController {
 
     private final UserRepository userRepository;
+    private final InvitationService invitationService;
 
     @Data
     @Builder
@@ -110,6 +115,21 @@ public class UserManagementController {
         return ResponseEntity.ok(ApiResponse.success(
                 user.getActive() ? "Account activated" : "Account deactivated",
                 toSummary(userRepository.save(user))));
+    }
+
+    /**
+     * POST /api/v1/admin/users/invite-team-leader
+     * Creates a TEAM_LEADER account, assigns them to a team, and sends an invitation email.
+     */
+    @PostMapping("/invite-team-leader")
+    public ResponseEntity<ApiResponse<UserSummary>> inviteTeamLeader(
+            @Valid @RequestBody InviteTeamLeaderRequest request,
+            @AuthenticationPrincipal User admin) {
+
+        User invited = invitationService.inviteTeamLeader(request, admin);
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(ApiResponse.success("Team leader invitation sent to " + invited.getEmail(),
+                        toSummary(invited)));
     }
 
     private User findUser(Long id) {

@@ -5,6 +5,7 @@ import com.auca.attendance.dto.response.ApiResponse;
 import com.auca.attendance.dto.response.AuthResponse;
 import com.auca.attendance.entity.User;
 import com.auca.attendance.service.AuthService;
+import com.auca.attendance.service.InvitationService;
 import com.auca.attendance.service.MfaService;
 import com.auca.attendance.service.PasswordResetService;
 import jakarta.validation.Valid;
@@ -24,6 +25,7 @@ public class AuthController {
     private final AuthService authService;
     private final PasswordResetService passwordResetService;
     private final MfaService mfaService;
+    private final InvitationService invitationService;
 
     /** Standard email + password login. Returns access token + refresh token. */
     @PostMapping("/login")
@@ -159,5 +161,32 @@ public class AuthController {
             @Valid @RequestBody RefreshTokenRequest request) {
         authService.logout(request);
         return ResponseEntity.ok(ApiResponse.success("Logged out successfully", null));
+    }
+
+    /**
+     * Validate an invitation token (pre-check before showing the set-password form).
+     * Returns the invited user's name and email so the frontend can display it.
+     */
+    @GetMapping("/invitation")
+    public ResponseEntity<ApiResponse<Map<String, String>>> validateInvitation(
+            @RequestParam String token) {
+        User user = invitationService.validateInvitationToken(token);
+        return ResponseEntity.ok(ApiResponse.success(Map.of(
+                "name", user.getName(),
+                "email", user.getEmail(),
+                "role", user.getRole().name()
+        )));
+    }
+
+    /**
+     * Accept an invitation: set password + activate account.
+     * Returns auth tokens so the user is logged in immediately.
+     */
+    @PostMapping("/accept-invitation")
+    public ResponseEntity<ApiResponse<AuthResponse>> acceptInvitation(
+            @Valid @RequestBody AcceptInvitationRequest request) {
+        return ResponseEntity.ok(ApiResponse.success(
+                "Account activated successfully",
+                invitationService.acceptInvitation(request)));
     }
 }
