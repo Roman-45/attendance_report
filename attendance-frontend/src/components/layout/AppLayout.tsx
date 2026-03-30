@@ -13,14 +13,14 @@ export function AppLayout() {
 
   if (isLoading) {
     return (
-      <div className="flex h-screen flex-col items-center justify-center gap-4 bg-background">
-        <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-primary shadow-lg shadow-primary/30">
-          <GraduationCap className="h-7 w-7 text-primary-foreground" />
+      <div className="flex h-screen flex-col items-center justify-center gap-4 bg-[#F8FAFC] dark:bg-[#0B1120]">
+        <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-[#4F46E5] shadow-[0_4px_16px_rgba(79,70,229,0.3)]">
+          <GraduationCap className="h-7 w-7 text-white" />
         </div>
-        <div className="h-1 w-32 overflow-hidden rounded-full bg-muted">
-          <div className="h-full w-1/2 rounded-full bg-primary animate-[loading_1.2s_ease-in-out_infinite]" />
+        <div className="h-1 w-32 overflow-hidden rounded-full bg-[#E2E8F0] dark:bg-[#1E293B]">
+          <div className="h-full w-1/2 rounded-full bg-[#4F46E5] animate-[loading_1.2s_ease-in-out_infinite]" />
         </div>
-        <p className="text-sm text-muted-foreground">Loading…</p>
+        <p className="text-sm text-[#64748B]">Loading…</p>
         <style>{`
           @keyframes loading {
             0%   { transform: translateX(-100%); }
@@ -47,7 +47,7 @@ export function AppLayout() {
         {sidebarOpen && (
           <>
             <div
-              className="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm md:hidden"
+              className="fixed inset-0 z-40 bg-[#0F172A]/60 backdrop-blur-sm md:hidden"
               onClick={() => setSidebarOpen(false)}
             />
             <div className="fixed inset-y-0 left-0 z-50 md:hidden animate-slide-up">
@@ -58,7 +58,7 @@ export function AppLayout() {
 
         <div className="flex flex-1 flex-col overflow-hidden">
           <TopBar onMenuClick={() => setSidebarOpen((v) => !v)} />
-          <main className="flex-1 overflow-auto p-4 md:p-6 animate-fade-in">
+          <main className="flex-1 overflow-auto p-4 md:p-6 animate-fade-in bg-[#F8FAFC] dark:bg-[#0B1120]">
             <Outlet />
           </main>
           <Footer />

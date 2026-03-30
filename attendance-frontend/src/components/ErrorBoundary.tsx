@@ -32,17 +32,17 @@ export class ErrorBoundary extends Component<Props, State> {
   render() {
     if (this.state.hasError) {
       return (
-        <div className="flex min-h-screen items-center justify-center bg-background p-4">
+        <div className="flex min-h-screen items-center justify-center bg-[#F8FAFC] dark:bg-[#0B1120] p-4">
           <div className="max-w-md text-center space-y-4">
-            <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-destructive/10">
-              <AlertTriangle className="h-8 w-8 text-destructive" />
+            <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-[#FEF2F2] dark:bg-[#DC2626]/10">
+              <AlertTriangle className="h-8 w-8 text-[#DC2626]" />
             </div>
-            <h1 className="text-2xl font-bold">Something went wrong</h1>
-            <p className="text-muted-foreground text-sm">
+            <h1 className="text-2xl font-bold text-[#0F172A] dark:text-[#F1F5F9]">Something went wrong</h1>
+            <p className="text-[#64748B] dark:text-[#94A3B8] text-sm">
               An unexpected error occurred. Try refreshing the page or going back.
             </p>
             {this.state.error && (
-              <pre className="mt-2 max-h-32 overflow-auto rounded-lg bg-muted p-3 text-left text-xs text-muted-foreground">
+              <pre className="mt-2 max-h-32 overflow-auto rounded-lg bg-[#F1F5F9] dark:bg-[#1E293B] p-3 text-left text-xs text-[#64748B] dark:text-[#94A3B8]">
                 {this.state.error.message}
               </pre>
             )}
