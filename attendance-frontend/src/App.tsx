@@ -18,6 +18,11 @@ import AuditLog from '@/pages/AuditLog'
 import StudentPortal from '@/pages/StudentPortal'
 import Profile from '@/pages/Profile'
 import UserManagement from '@/pages/UserManagement'
+import Teams from '@/pages/Teams'
+import Seating from '@/pages/Seating'
+import Claims from '@/pages/Claims'
+import TeamLeaderDashboard from '@/pages/TeamLeaderDashboard'
+import AcceptInvitation from '@/pages/AcceptInvitation'
 import NotFound from '@/pages/NotFound'
 
 const queryClient = new QueryClient({
@@ -35,6 +40,7 @@ function RoleRedirect() {
   if (isLoading) return null
   if (!user) return <Navigate to="/login" replace />
   if (user.role === 'STUDENT') return <Navigate to="/portal" replace />
+  if (user.role === 'TEAM_LEADER') return <Navigate to="/leader" replace />
   return <Navigate to="/dashboard" replace />
 }
 
@@ -48,6 +54,7 @@ export default function App() {
             <Route path="/signup" element={<Signup />} />
             <Route path="/verify-email-pending" element={<VerifyEmailPending />} />
             <Route path="/forgot-password" element={<ForgotPassword />} />
+            <Route path="/accept-invitation" element={<AcceptInvitation />} />
             <Route element={<AppLayout />}>
               <Route path="/dashboard" element={<Dashboard />} />
               <Route path="/students" element={<Students />} />
@@ -58,6 +65,10 @@ export default function App() {
               <Route path="/notifications" element={<Notifications />} />
               <Route path="/audit-log" element={<AuditLog />} />
               <Route path="/users" element={<UserManagement />} />
+              <Route path="/teams" element={<Teams />} />
+              <Route path="/seating" element={<Seating />} />
+              <Route path="/claims" element={<Claims />} />
+              <Route path="/leader" element={<TeamLeaderDashboard />} />
               <Route path="/portal" element={<StudentPortal />} />
               <Route path="/portal/*" element={<StudentPortal />} />
               <Route path="/profile" element={<Profile />} />
