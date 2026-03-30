@@ -25,10 +25,10 @@ export default function AuditLog() {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-3xl font-bold tracking-tight">Audit Log</h1>
+      <h1 className="text-2xl font-bold tracking-tight text-[#0F172A] dark:text-[#F1F5F9]">Audit Log</h1>
 
       <div className="relative max-w-sm">
-        <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+        <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#94A3B8]" />
         <Input placeholder="Search audit log..." className="pl-9" value={search} onChange={(e) => { setSearch(e.target.value); setPage(0) }} />
       </div>
 
@@ -48,7 +48,7 @@ export default function AuditLog() {
               {isLoading ? (
                 Array.from({ length: 5 }).map((_, i) => <SkeletonRow key={i} cols={5} />)
               ) : logs.length === 0 ? (
-                <TableRow><TableCell colSpan={5} className="text-center py-8 text-muted-foreground">No audit entries</TableCell></TableRow>
+                <TableRow><TableCell colSpan={5} className="text-center py-8 text-[#94A3B8]">No audit entries</TableCell></TableRow>
               ) : (
                 logs.map((log) => (
                   <TableRow key={log.id}>
@@ -68,7 +68,7 @@ export default function AuditLog() {
       {totalPages > 1 && (
         <div className="flex items-center justify-center gap-2">
           <Button variant="outline" size="sm" onClick={() => setPage(p => Math.max(0, p - 1))} disabled={page === 0}>Previous</Button>
-          <span className="text-sm text-muted-foreground">Page {page + 1} of {totalPages}</span>
+          <span className="text-sm text-[#64748B] dark:text-[#94A3B8]">Page {page + 1} of {totalPages}</span>
           <Button variant="outline" size="sm" onClick={() => setPage(p => p + 1)} disabled={page >= totalPages - 1}>Next</Button>
         </div>
       )}

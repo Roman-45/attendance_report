@@ -41,14 +41,14 @@ const REPORT_TYPES = [
 ]
 
 const frequencyBadgeClass: Record<string, string> = {
-  DAILY: 'bg-blue-100 text-blue-700 border-blue-200',
-  WEEKLY: 'bg-violet-100 text-violet-700 border-violet-200',
-  MONTHLY: 'bg-amber-100 text-amber-700 border-amber-200',
+  DAILY:   'bg-[#F0F9FF] text-[#0284C7] border-[#BAE6FD]',
+  WEEKLY:  'bg-[#EEF2FF] text-[#4F46E5] border-[#C7D2FE]',
+  MONTHLY: 'bg-[#FFFBEB] text-[#D97706] border-[#FDE68A]',
 }
 
 const reportTypeBadgeClass: Record<string, string> = {
-  ATTENDANCE: 'bg-emerald-100 text-emerald-700 border-emerald-200',
-  MARKS: 'bg-orange-100 text-orange-700 border-orange-200',
+  ATTENDANCE: 'bg-[#ECFDF5] text-[#059669] border-[#A7F3D0]',
+  MARKS:      'bg-[#FFFBEB] text-[#D97706] border-[#FDE68A]',
 }
 
 export default function Reports() {
@@ -156,15 +156,17 @@ export default function Reports() {
   return (
     <div className="space-y-8 animate-fade-in">
       <div>
-        <h1 className="text-3xl font-bold tracking-tight">Reports</h1>
-        <p className="text-sm text-muted-foreground mt-1">Download module reports or configure automated email delivery</p>
+        <h1 className="text-3xl font-bold tracking-tight text-[#0F172A] dark:text-[#F1F5F9]">Reports</h1>
+        <p className="text-sm text-[#64748B] dark:text-[#94A3B8] mt-1">
+          Download module reports or configure automated email delivery
+        </p>
       </div>
 
       {/* ── Manual Download Section ── */}
       <section className="space-y-4">
-        <h2 className="text-lg font-semibold">Manual Download</h2>
+        <h2 className="text-lg font-semibold text-[#0F172A] dark:text-[#F1F5F9]">Manual Download</h2>
         <div className="max-w-sm">
-          <Label>Select Module</Label>
+          <Label className="text-[#334155] dark:text-[#94A3B8]">Select Module</Label>
           <Select value={selectedModuleId} onValueChange={setSelectedModuleId}>
             <SelectTrigger><SelectValue placeholder="Choose a module" /></SelectTrigger>
             <SelectContent>
@@ -176,36 +178,64 @@ export default function Reports() {
         </div>
 
         <div className="grid gap-4 md:grid-cols-2">
-          <Card>
+          <Card className="bg-[#FFFFFF] dark:bg-[#111827] border-[#E2E8F0] dark:border-[#1E3A5F]">
             <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <FileSpreadsheet className="h-5 w-5" /> Attendance Report
+              <CardTitle className="flex items-center gap-2 text-[#0F172A] dark:text-[#F1F5F9]">
+                <FileSpreadsheet className="h-5 w-5 text-[#059669]" /> Attendance Report
               </CardTitle>
-              <CardDescription>Download attendance records for the selected module</CardDescription>
+              <CardDescription className="text-[#64748B] dark:text-[#94A3B8]">
+                Download attendance records for the selected module
+              </CardDescription>
             </CardHeader>
             <CardContent className="flex gap-2">
-              <Button variant="outline" onClick={() => downloadReport('attendance', 'excel')} disabled={!!downloading || !selectedModuleId}>
-                <Download className="h-4 w-4 mr-2" /> {downloading === 'attendance-excel' ? 'Downloading…' : 'Excel'}
+              <Button
+                variant="outline"
+                className="border-[#E2E8F0] text-[#334155] hover:bg-[#F1F5F9] hover:text-[#0F172A] dark:border-[#1E3A5F] dark:text-[#94A3B8] dark:hover:bg-[#1E293B]"
+                onClick={() => downloadReport('attendance', 'excel')}
+                disabled={!!downloading || !selectedModuleId}
+              >
+                <Download className="h-4 w-4 mr-2" />
+                {downloading === 'attendance-excel' ? 'Downloading…' : 'Excel'}
               </Button>
-              <Button variant="outline" onClick={() => downloadReport('attendance', 'pdf')} disabled={!!downloading || !selectedModuleId}>
-                <Download className="h-4 w-4 mr-2" /> {downloading === 'attendance-pdf' ? 'Downloading…' : 'PDF'}
+              <Button
+                variant="outline"
+                className="border-[#E2E8F0] text-[#334155] hover:bg-[#F1F5F9] hover:text-[#0F172A] dark:border-[#1E3A5F] dark:text-[#94A3B8] dark:hover:bg-[#1E293B]"
+                onClick={() => downloadReport('attendance', 'pdf')}
+                disabled={!!downloading || !selectedModuleId}
+              >
+                <Download className="h-4 w-4 mr-2" />
+                {downloading === 'attendance-pdf' ? 'Downloading…' : 'PDF'}
               </Button>
             </CardContent>
           </Card>
 
-          <Card>
+          <Card className="bg-[#FFFFFF] dark:bg-[#111827] border-[#E2E8F0] dark:border-[#1E3A5F]">
             <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <FileText className="h-5 w-5" /> Marks Report
+              <CardTitle className="flex items-center gap-2 text-[#0F172A] dark:text-[#F1F5F9]">
+                <FileText className="h-5 w-5 text-[#4F46E5]" /> Marks Report
               </CardTitle>
-              <CardDescription>Download marks and grades for the selected module</CardDescription>
+              <CardDescription className="text-[#64748B] dark:text-[#94A3B8]">
+                Download marks and grades for the selected module
+              </CardDescription>
             </CardHeader>
             <CardContent className="flex gap-2">
-              <Button variant="outline" onClick={() => downloadReport('marks', 'excel')} disabled={!!downloading || !selectedModuleId}>
-                <Download className="h-4 w-4 mr-2" /> {downloading === 'marks-excel' ? 'Downloading…' : 'Excel'}
+              <Button
+                variant="outline"
+                className="border-[#E2E8F0] text-[#334155] hover:bg-[#F1F5F9] hover:text-[#0F172A] dark:border-[#1E3A5F] dark:text-[#94A3B8] dark:hover:bg-[#1E293B]"
+                onClick={() => downloadReport('marks', 'excel')}
+                disabled={!!downloading || !selectedModuleId}
+              >
+                <Download className="h-4 w-4 mr-2" />
+                {downloading === 'marks-excel' ? 'Downloading…' : 'Excel'}
               </Button>
-              <Button variant="outline" onClick={() => downloadReport('marks', 'pdf')} disabled={!!downloading || !selectedModuleId}>
-                <Download className="h-4 w-4 mr-2" /> {downloading === 'marks-pdf' ? 'Downloading…' : 'PDF'}
+              <Button
+                variant="outline"
+                className="border-[#E2E8F0] text-[#334155] hover:bg-[#F1F5F9] hover:text-[#0F172A] dark:border-[#1E3A5F] dark:text-[#94A3B8] dark:hover:bg-[#1E293B]"
+                onClick={() => downloadReport('marks', 'pdf')}
+                disabled={!!downloading || !selectedModuleId}
+              >
+                <Download className="h-4 w-4 mr-2" />
+                {downloading === 'marks-pdf' ? 'Downloading…' : 'PDF'}
               </Button>
             </CardContent>
           </Card>
@@ -217,8 +247,10 @@ export default function Reports() {
         <section className="space-y-4">
           <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3">
             <div>
-              <h2 className="text-lg font-semibold">Scheduled Email Reports</h2>
-              <p className="text-sm text-muted-foreground">Automatically send reports to recipients on a recurring schedule</p>
+              <h2 className="text-lg font-semibold text-[#0F172A] dark:text-[#F1F5F9]">Scheduled Email Reports</h2>
+              <p className="text-sm text-[#64748B] dark:text-[#94A3B8]">
+                Automatically send reports to recipients on a recurring schedule
+              </p>
             </div>
             <div className="flex flex-wrap items-center gap-2">
               {/* Manual trigger buttons */}
@@ -227,6 +259,7 @@ export default function Reports() {
                   key={f.value}
                   variant="outline"
                   size="sm"
+                  className="border-[#E2E8F0] text-[#334155] hover:bg-[#F1F5F9] hover:text-[#0F172A] dark:border-[#1E3A5F] dark:text-[#94A3B8] dark:hover:bg-[#1E293B]"
                   onClick={() => triggerMutation.mutate(f.value)}
                   disabled={!!triggeringFrequency}
                   title={`Manually trigger all ${f.label.toLowerCase()} reports now`}
@@ -239,81 +272,86 @@ export default function Reports() {
                   {f.label}
                 </Button>
               ))}
-              <Button onClick={() => setScheduleDialogOpen(true)}>
+              <Button
+                className="bg-[#4F46E5] hover:bg-[#4338CA] text-[#FFFFFF]"
+                onClick={() => setScheduleDialogOpen(true)}
+              >
                 <Plus className="h-4 w-4" /> New Schedule
               </Button>
             </div>
           </div>
 
-          <Card>
+          <Card className="bg-[#FFFFFF] dark:bg-[#111827] border-[#E2E8F0] dark:border-[#1E3A5F]">
             <CardContent className="p-0 overflow-x-auto">
               <Table>
                 <TableHeader>
-                  <TableRow>
-                    <TableHead>Module</TableHead>
-                    <TableHead>Report Type</TableHead>
-                    <TableHead>Frequency</TableHead>
-                    <TableHead>Recipient</TableHead>
-                    <TableHead>Last Sent</TableHead>
-                    <TableHead>Created By</TableHead>
+                  <TableRow className="border-[#E2E8F0] dark:border-[#1E3A5F] bg-[#F8FAFC] dark:bg-[#1E293B]">
+                    <TableHead className="text-[#64748B] dark:text-[#94A3B8]">Module</TableHead>
+                    <TableHead className="text-[#64748B] dark:text-[#94A3B8]">Report Type</TableHead>
+                    <TableHead className="text-[#64748B] dark:text-[#94A3B8]">Frequency</TableHead>
+                    <TableHead className="text-[#64748B] dark:text-[#94A3B8]">Recipient</TableHead>
+                    <TableHead className="text-[#64748B] dark:text-[#94A3B8]">Last Sent</TableHead>
+                    <TableHead className="text-[#64748B] dark:text-[#94A3B8]">Created By</TableHead>
                     <TableHead className="w-16"></TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {scheduledLoading ? (
                     Array.from({ length: 3 }).map((_, i) => (
-                      <TableRow key={i} className="animate-pulse">
+                      <TableRow key={i} className="animate-pulse border-[#E2E8F0] dark:border-[#1E3A5F]">
                         {Array.from({ length: 7 }).map((__, j) => (
-                          <TableCell key={j}><div className="h-4 rounded bg-muted w-3/4" /></TableCell>
+                          <TableCell key={j}>
+                            <div className="h-4 rounded bg-[#F1F5F9] dark:bg-[#1E293B] w-3/4" />
+                          </TableCell>
                         ))}
                       </TableRow>
                     ))
                   ) : scheduledReports.length === 0 ? (
-                    <TableRow>
-                      <TableCell colSpan={7} className="text-center py-12 text-muted-foreground">
+                    <TableRow className="border-[#E2E8F0] dark:border-[#1E3A5F]">
+                      <TableCell colSpan={7} className="text-center py-12 text-[#94A3B8] dark:text-[#64748B]">
                         <Clock className="h-8 w-8 mx-auto mb-2 opacity-30" />
                         No scheduled reports yet. Click "New Schedule" to create one.
                       </TableCell>
                     </TableRow>
                   ) : (
                     scheduledReports.map(r => (
-                      <TableRow key={r.id}>
+                      <TableRow key={r.id} className="border-[#E2E8F0] dark:border-[#1E3A5F] hover:bg-[#F8FAFC] dark:hover:bg-[#1E293B]">
                         <TableCell>
                           <div>
-                            <p className="font-medium text-sm">{r.module?.name ?? '—'}</p>
-                            <p className="text-xs text-muted-foreground font-mono">{r.module?.code}</p>
+                            <p className="font-medium text-sm text-[#0F172A] dark:text-[#F1F5F9]">{r.module?.name ?? '—'}</p>
+                            <p className="text-xs text-[#94A3B8] font-mono">{r.module?.code}</p>
                           </div>
                         </TableCell>
                         <TableCell>
-                          <Badge className={`text-xs ${reportTypeBadgeClass[r.reportType] ?? 'bg-secondary'}`}>
+                          <Badge className={`text-xs border ${reportTypeBadgeClass[r.reportType] ?? 'bg-[#F1F5F9] text-[#334155] border-[#E2E8F0]'}`}>
                             {r.reportType === 'ATTENDANCE' ? 'Attendance' : 'Marks'}
                           </Badge>
                         </TableCell>
                         <TableCell>
-                          <Badge className={`text-xs ${frequencyBadgeClass[r.frequency] ?? 'bg-secondary'}`}>
+                          <Badge className={`text-xs border ${frequencyBadgeClass[r.frequency] ?? 'bg-[#F1F5F9] text-[#334155] border-[#E2E8F0]'}`}>
                             {r.frequency.charAt(0) + r.frequency.slice(1).toLowerCase()}
                           </Badge>
                         </TableCell>
                         <TableCell>
-                          <div className="flex items-center gap-1.5 text-sm">
-                            <Mail className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+                          <div className="flex items-center gap-1.5 text-sm text-[#334155] dark:text-[#94A3B8]">
+                            <Mail className="h-3.5 w-3.5 text-[#94A3B8] shrink-0" />
                             <span className="truncate max-w-[180px]">{r.recipientEmail}</span>
                           </div>
                         </TableCell>
-                        <TableCell className="text-sm text-muted-foreground">
+                        <TableCell className="text-sm text-[#64748B] dark:text-[#94A3B8]">
                           {r.lastSentAt
                             ? new Date(r.lastSentAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
-                            : <span className="text-muted-foreground/50">Never</span>
+                            : <span className="text-[#94A3B8]/50">Never</span>
                           }
                         </TableCell>
-                        <TableCell className="text-sm text-muted-foreground">
+                        <TableCell className="text-sm text-[#64748B] dark:text-[#94A3B8]">
                           {r.createdBy?.name ?? '—'}
                         </TableCell>
                         <TableCell>
                           <Button
                             variant="ghost"
                             size="icon"
-                            className="h-7 w-7 text-muted-foreground hover:text-destructive"
+                            className="h-7 w-7 text-[#94A3B8] hover:text-[#DC2626] hover:bg-[#FEE2E2]"
                             onClick={() => deleteScheduleMutation.mutate(r.id)}
                             disabled={deleteScheduleMutation.isPending}
                             title="Delete schedule"
@@ -332,13 +370,16 @@ export default function Reports() {
           {/* Schedule frequency info */}
           <div className="grid gap-3 md:grid-cols-3">
             {FREQUENCIES.map(f => (
-              <div key={f.value} className="flex items-center gap-3 rounded-lg border bg-card px-4 py-3">
-                <div className="rounded-full bg-muted p-2 shrink-0">
-                  <f.icon className="h-4 w-4 text-muted-foreground" />
+              <div
+                key={f.value}
+                className="flex items-center gap-3 rounded-lg border border-[#E2E8F0] dark:border-[#1E3A5F] bg-[#FFFFFF] dark:bg-[#111827] px-4 py-3"
+              >
+                <div className="rounded-full bg-[#EEF2FF] dark:bg-[#1E293B] p-2 shrink-0">
+                  <f.icon className="h-4 w-4 text-[#4F46E5]" />
                 </div>
                 <div>
-                  <p className="text-sm font-medium">{f.label}</p>
-                  <p className="text-xs text-muted-foreground">{f.description}</p>
+                  <p className="text-sm font-medium text-[#0F172A] dark:text-[#F1F5F9]">{f.label}</p>
+                  <p className="text-xs text-[#64748B] dark:text-[#94A3B8]">{f.description}</p>
                 </div>
               </div>
             ))}
@@ -348,13 +389,13 @@ export default function Reports() {
 
       {/* New Schedule Dialog */}
       <Dialog open={scheduleDialogOpen} onOpenChange={setScheduleDialogOpen}>
-        <DialogContent className="max-w-md">
+        <DialogContent className="max-w-md bg-[#FFFFFF] dark:bg-[#111827] border-[#E2E8F0] dark:border-[#1E3A5F]">
           <DialogHeader>
-            <DialogTitle>Create Scheduled Report</DialogTitle>
+            <DialogTitle className="text-[#0F172A] dark:text-[#F1F5F9]">Create Scheduled Report</DialogTitle>
           </DialogHeader>
           <form onSubmit={handleScheduleSubmit} className="space-y-4">
             <div className="space-y-1.5">
-              <Label>Module</Label>
+              <Label className="text-[#334155] dark:text-[#94A3B8]">Module</Label>
               <Select
                 value={scheduleForm.moduleId}
                 onValueChange={v => setScheduleForm(f => ({ ...f, moduleId: v }))}
@@ -365,7 +406,7 @@ export default function Reports() {
                 <SelectContent>
                   {modules.map(m => (
                     <SelectItem key={m.id} value={String(m.id)}>
-                      <span className="font-mono text-xs mr-2 text-muted-foreground">{m.code}</span>{m.name}
+                      <span className="font-mono text-xs mr-2 text-[#94A3B8]">{m.code}</span>{m.name}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -374,7 +415,7 @@ export default function Reports() {
 
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-1.5">
-                <Label>Report Type</Label>
+                <Label className="text-[#334155] dark:text-[#94A3B8]">Report Type</Label>
                 <Select
                   value={scheduleForm.reportType}
                   onValueChange={v => setScheduleForm(f => ({ ...f, reportType: v }))}
@@ -391,7 +432,7 @@ export default function Reports() {
               </div>
 
               <div className="space-y-1.5">
-                <Label>Frequency</Label>
+                <Label className="text-[#334155] dark:text-[#94A3B8]">Frequency</Label>
                 <Select
                   value={scheduleForm.frequency}
                   onValueChange={v => setScheduleForm(f => ({ ...f, frequency: v }))}
@@ -409,7 +450,7 @@ export default function Reports() {
             </div>
 
             <div className="space-y-1.5">
-              <Label>Recipient Email</Label>
+              <Label className="text-[#334155] dark:text-[#94A3B8]">Recipient Email</Label>
               <Input
                 type="email"
                 value={scheduleForm.recipientEmail}
@@ -420,17 +461,23 @@ export default function Reports() {
             </div>
 
             {scheduleForm.frequency && (
-              <div className="rounded-lg bg-muted/50 px-3 py-2 text-xs text-muted-foreground">
+              <div className="rounded-lg bg-[#EEF2FF] dark:bg-[#1E293B] px-3 py-2 text-xs text-[#4F46E5] dark:text-[#94A3B8]">
                 {FREQUENCIES.find(f => f.value === scheduleForm.frequency)?.description}
               </div>
             )}
 
             <DialogFooter>
-              <Button type="button" variant="outline" onClick={() => setScheduleDialogOpen(false)}>
+              <Button
+                type="button"
+                variant="outline"
+                className="border-[#E2E8F0] text-[#334155] hover:bg-[#F1F5F9] hover:text-[#0F172A] dark:border-[#1E3A5F] dark:text-[#94A3B8] dark:hover:bg-[#1E293B]"
+                onClick={() => setScheduleDialogOpen(false)}
+              >
                 Cancel
               </Button>
               <Button
                 type="submit"
+                className="bg-[#4F46E5] hover:bg-[#4338CA] text-[#FFFFFF]"
                 disabled={createScheduleMutation.isPending || !scheduleForm.moduleId || !scheduleForm.recipientEmail.trim()}
               >
                 {createScheduleMutation.isPending ? (

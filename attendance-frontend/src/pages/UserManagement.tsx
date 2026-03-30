@@ -24,13 +24,18 @@ interface UserSummary {
   createdAt: string
 }
 
-const ROLES = ['ADMIN', 'FACILITATOR', 'INSTRUCTOR', 'STUDENT']
+const ROLES = ['ADMIN', 'FACILITATOR', 'INSTRUCTOR', 'TEAM_LEADER', 'STUDENT']
 
 const roleBadgeClass: Record<string, string> = {
-  ADMIN: 'bg-red-100 text-red-700 border-red-200',
-  FACILITATOR: 'bg-blue-100 text-blue-700 border-blue-200',
-  INSTRUCTOR: 'bg-violet-100 text-violet-700 border-violet-200',
-  STUDENT: 'bg-emerald-100 text-emerald-700 border-emerald-200',
+  ADMIN: 'bg-[#FEF2F2] text-[#DC2626] border-[#FECACA]',
+  FACILITATOR: 'bg-[#F0F9FF] text-[#0284C7] border-[#BAE6FD]',
+  INSTRUCTOR: 'bg-[#EEF2FF] text-[#7C3AED] border-[#C7D2FE]',
+  TEAM_LEADER: 'bg-[#FFFBEB] text-[#D97706] border-[#FDE68A]',
+  STUDENT: 'bg-[#ECFDF5] text-[#059669] border-[#A7F3D0]',
+}
+
+function formatRoleName(role: string) {
+  return role.split('_').map(w => w.charAt(0) + w.slice(1).toLowerCase()).join(' ')
 }
 
 function initials(name: string) {
@@ -106,12 +111,12 @@ export default function UserManagement() {
     <div className="space-y-6 animate-fade-in">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">User Management</h1>
-          <p className="text-sm text-muted-foreground mt-1">
+          <h1 className="text-2xl font-bold tracking-tight text-[#0F172A] dark:text-[#F1F5F9]">User Management</h1>
+          <p className="text-sm text-[#64748B] dark:text-[#94A3B8] mt-1">
             {totalElements > 0 ? `${totalElements} total accounts` : 'Manage user roles and access'}
           </p>
         </div>
-        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+        <div className="flex items-center gap-2 text-sm text-[#64748B]">
           <Shield className="h-4 w-4" />
           Admin only
         </div>
@@ -120,7 +125,7 @@ export default function UserManagement() {
       {/* Search & filter */}
       <div className="flex flex-col sm:flex-row gap-3">
         <div className="relative flex-1 max-w-sm">
-          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#94A3B8]" />
           <Input
             placeholder="Search by name or email..."
             className="pl-9"
@@ -136,7 +141,7 @@ export default function UserManagement() {
             <SelectItem value="ALL">All Roles</SelectItem>
             {ROLES.map(r => (
               <SelectItem key={r} value={r}>
-                {r.charAt(0) + r.slice(1).toLowerCase()}
+                {formatRoleName(r)}
               </SelectItem>
             ))}
           </SelectContent>
@@ -162,7 +167,7 @@ export default function UserManagement() {
                 Array.from({ length: 6 }).map((_, i) => <SkeletonRow key={i} cols={7} />)
               ) : users.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={7} className="text-center py-12 text-muted-foreground">
+                  <TableCell colSpan={7} className="text-center py-12 text-[#94A3B8]">
                     <Users className="h-8 w-8 mx-auto mb-2 opacity-30" />
                     No users found
                   </TableCell>
@@ -175,23 +180,23 @@ export default function UserManagement() {
                       <TableCell>
                         <div className="flex items-center gap-2.5">
                           <Avatar className="h-7 w-7 text-xs">
-                            <AvatarFallback className="bg-primary/10 text-primary text-[10px] font-semibold">
+                            <AvatarFallback className="bg-[#EEF2FF] text-[#4F46E5] text-[10px] font-semibold dark:bg-[#4F46E5]/15 dark:text-[#A5B4FC]">
                               {initials(u.name)}
                             </AvatarFallback>
                           </Avatar>
                           <div className="min-w-0">
                             <p className="text-sm font-medium truncate max-w-[140px]">{u.name}</p>
                             {u.googleLinked && (
-                              <p className="text-[10px] text-muted-foreground">Google account</p>
+                              <p className="text-[10px] text-[#94A3B8]">Google account</p>
                             )}
                           </div>
                         </div>
                       </TableCell>
-                      <TableCell className="text-sm text-muted-foreground hidden sm:table-cell">{u.email}</TableCell>
+                      <TableCell className="text-sm text-[#64748B] dark:text-[#94A3B8] hidden sm:table-cell">{u.email}</TableCell>
                       <TableCell>
                         {isSelf ? (
                           <Badge className={`text-xs ${roleBadgeClass[u.role] ?? ''}`}>
-                            {u.role.charAt(0) + u.role.slice(1).toLowerCase()}
+                            {formatRoleName(u.role)}
                           </Badge>
                         ) : (
                           <Select
@@ -205,7 +210,7 @@ export default function UserManagement() {
                             <SelectContent>
                               {ROLES.map(r => (
                                 <SelectItem key={r} value={r} className="text-xs">
-                                  {r.charAt(0) + r.slice(1).toLowerCase()}
+                                  {formatRoleName(r)}
                                 </SelectItem>
                               ))}
                             </SelectContent>
@@ -214,19 +219,19 @@ export default function UserManagement() {
                       </TableCell>
                       <TableCell>
                         {u.active ? (
-                          <Badge className="bg-emerald-100 text-emerald-700 border-emerald-200 text-xs">Active</Badge>
+                          <Badge className="bg-[#ECFDF5] text-[#059669] border-[#A7F3D0] text-xs">Active</Badge>
                         ) : (
-                          <Badge className="bg-gray-100 text-gray-500 border-gray-200 text-xs">Deactivated</Badge>
+                          <Badge className="bg-[#F1F5F9] text-[#64748B] border-[#E2E8F0] text-xs dark:bg-[#1E293B] dark:text-[#94A3B8] dark:border-[#1E3A5F]">Deactivated</Badge>
                         )}
                       </TableCell>
                       <TableCell className="hidden md:table-cell">
                         {u.emailVerified ? (
-                          <span className="text-xs text-emerald-600 font-medium">Verified</span>
+                          <span className="text-xs text-[#059669] font-medium">Verified</span>
                         ) : (
-                          <span className="text-xs text-muted-foreground">Unverified</span>
+                          <span className="text-xs text-[#94A3B8]">Unverified</span>
                         )}
                       </TableCell>
-                      <TableCell className="text-xs text-muted-foreground hidden md:table-cell">
+                      <TableCell className="text-xs text-[#64748B] dark:text-[#94A3B8] hidden md:table-cell">
                         {new Date(u.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
                       </TableCell>
                       <TableCell>
@@ -234,7 +239,7 @@ export default function UserManagement() {
                           <Button
                             variant="ghost"
                             size="sm"
-                            className={`text-xs h-7 ${u.active ? 'text-muted-foreground hover:text-destructive' : 'text-muted-foreground hover:text-emerald-600'}`}
+                            className={`text-xs h-7 ${u.active ? 'text-[#64748B] hover:text-[#DC2626]' : 'text-[#64748B] hover:text-[#059669]'}`}
                             onClick={() => activeMutation.mutate({ id: u.id, active: !u.active })}
                             disabled={activeMutation.isPending}
                             title={u.active ? 'Deactivate account' : 'Activate account'}
@@ -266,7 +271,7 @@ export default function UserManagement() {
           </Button>
           {getPageNumbers().map((p, i) =>
             p === '...' ? (
-              <span key={`e-${i}`} className="px-2 text-sm text-muted-foreground">…</span>
+              <span key={`e-${i}`} className="px-2 text-sm text-[#94A3B8]">…</span>
             ) : (
               <Button
                 key={p}
