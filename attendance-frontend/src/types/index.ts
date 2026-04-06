@@ -7,6 +7,8 @@ export interface User {
   role: Role
   mfaEnabled: boolean
   photoUrl?: string | null
+  moduleSelectionRequired?: boolean
+  assignedModuleId?: number | null
 }
 
 export interface AuthTokens {
@@ -45,6 +47,8 @@ export interface Module {
   description: string
   startDate: string
   endDate: string
+  status: 'DRAFT' | 'ACTIVE' | 'CLOSED'
+  instructors?: string[]
 }
 
 export interface AttendanceSession {
@@ -99,11 +103,13 @@ export interface Notification {
 export interface ModuleDashboard {
   moduleId: number
   moduleName: string
-  totalStudents: number
+  moduleCode: string
+  totalEnrolled: number
   totalSessions: number
   averageAttendancePercent: number
-  studentsAboveThreshold: number
-  averageMarkPercent: number
+  absenceThreshold: number
+  studentsAtRisk: number
+  averageGrade: number | null
 }
 
 export interface GradeResponse {

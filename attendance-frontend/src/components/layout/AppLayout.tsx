@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Outlet, Navigate } from 'react-router-dom'
+import { Outlet, Navigate, useLocation } from 'react-router-dom'
 import { useAuth } from '@/context/AuthContext'
 import { SidebarProvider } from '@/context/SidebarContext'
 import { Sidebar } from './Sidebar'
@@ -8,7 +8,8 @@ import { Footer } from './Footer'
 import { GraduationCap } from 'lucide-react'
 
 export function AppLayout() {
-  const { isAuthenticated, isLoading } = useAuth()
+  const { isAuthenticated, isLoading, user } = useAuth()
+  const location = useLocation()
   const [sidebarOpen, setSidebarOpen] = useState(false)
 
   if (isLoading) {
@@ -33,6 +34,15 @@ export function AppLayout() {
 
   if (!isAuthenticated) {
     return <Navigate to="/login" replace />
+  }
+
+  // Instructors who haven't selected a module yet must be redirected to the selection page
+  if (
+    user?.role === 'INSTRUCTOR' &&
+    user?.moduleSelectionRequired &&
+    location.pathname !== '/select-module'
+  ) {
+    return <Navigate to="/select-module" replace />
   }
 
   return (

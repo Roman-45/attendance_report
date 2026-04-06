@@ -68,12 +68,17 @@ public class AuthController {
     @GetMapping("/me")
     public ResponseEntity<ApiResponse<AuthResponse>> me(@AuthenticationPrincipal User user) {
         String photoUrl = user.getProfilePhotoPath() != null ? "/api/v1/profile/photo" : null;
+        boolean needsModuleSelection = user.getRole() == com.auca.attendance.enums.Role.INSTRUCTOR
+                && user.getAssignedModule() == null;
+        Long assignedModuleId = user.getAssignedModule() != null ? user.getAssignedModule().getId() : null;
         AuthResponse response = AuthResponse.builder()
                 .userId(user.getId())
                 .name(user.getName())
                 .email(user.getEmail())
                 .role(user.getRole().name())
                 .photoUrl(photoUrl)
+                .moduleSelectionRequired(needsModuleSelection)
+                .assignedModuleId(assignedModuleId)
                 .build();
         return ResponseEntity.ok(ApiResponse.success(response));
     }

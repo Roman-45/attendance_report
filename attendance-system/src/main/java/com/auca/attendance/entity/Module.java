@@ -1,5 +1,6 @@
 package com.auca.attendance.entity;
 
+import com.auca.attendance.enums.ModuleStatus;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -34,6 +35,11 @@ public class Module {
 
     @Column(name = "end_date")
     private LocalDate endDate;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, length = 10)
+    @Builder.Default
+    private ModuleStatus status = ModuleStatus.ACTIVE;
 
     /** Percentage of absences that triggers a THRESHOLD_ALERT notification. Default 25%. */
     @Column(name = "absence_threshold_percent", nullable = false)

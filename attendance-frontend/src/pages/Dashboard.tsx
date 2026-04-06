@@ -26,7 +26,7 @@ export default function Dashboard() {
       if (!modules?.length) return []
       const results = await Promise.all(
         modules.slice(0, 10).map((m: { id: number }) =>
-          client.get(`/modules/${m.id}/dashboard`).then(r => r.data.data).catch(() => null)
+          client.get(`/dashboard/modules/${m.id}`).then(r => r.data.data).catch(() => null)
         )
       )
       return results.filter(Boolean) as ModuleDashboard[]
@@ -34,10 +34,10 @@ export default function Dashboard() {
     enabled: !!modules?.length,
   })
 
-  const totalStudents = dashboards?.reduce((sum, d) => sum + d.totalStudents, 0) ?? 0
-  const totalSessions = dashboards?.reduce((sum, d) => sum + d.totalSessions, 0) ?? 0
+  const totalStudents = dashboards?.reduce((sum, d) => sum + (d.totalEnrolled ?? 0), 0) ?? 0
+  const totalSessions = dashboards?.reduce((sum, d) => sum + (d.totalSessions ?? 0), 0) ?? 0
   const avgAttendance = dashboards?.length
-    ? Math.round(dashboards.reduce((sum, d) => sum + d.averageAttendancePercent, 0) / dashboards.length)
+    ? Math.round(dashboards.reduce((sum, d) => sum + (d.averageAttendancePercent ?? 0), 0) / dashboards.length)
     : 0
 
   const chartColors = [
@@ -170,25 +170,25 @@ export default function Dashboard() {
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-medium truncate text-[#0F172A] dark:text-[#F1F5F9]">{d.moduleName}</p>
                       <p className="text-[11px] text-[#64748B] dark:text-[#94A3B8]">
-                        {d.totalStudents} students · {d.totalSessions} sessions
+                        {d.totalEnrolled} students · {d.totalSessions} sessions
                       </p>
                     </div>
                     <div className="text-right shrink-0">
                       <p className={cn(
                         "text-sm font-bold",
-                        d.averageAttendancePercent >= 75 ? "text-[#059669]" : "text-[#D97706]"
+                        (d.averageAttendancePercent ?? 0) >= 75 ? "text-[#059669]" : "text-[#D97706]"
                       )}>
-                        {d.averageAttendancePercent}%
+                        {d.averageAttendancePercent != null ? `${d.averageAttendancePercent}%` : '—'}
                       </p>
                       <Badge
                         variant="outline"
                         className={cn("text-[9px] h-4",
-                          d.averageAttendancePercent >= 75
+                          (d.averageAttendancePercent ?? 0) >= 75
                             ? "text-[#059669] border-[#A7F3D0]"
                             : "text-[#D97706] border-[#FDE68A]"
                         )}
                       >
-                        {d.averageAttendancePercent >= 75 ? 'Good' : 'Low'}
+                        {(d.averageAttendancePercent ?? 0) >= 75 ? 'Good' : 'Low'}
                       </Badge>
                     </div>
                   </div>

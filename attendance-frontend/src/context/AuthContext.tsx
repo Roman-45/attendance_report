@@ -6,7 +6,7 @@ interface AuthState {
   user: User | null
   isAuthenticated: boolean
   isLoading: boolean
-  login: (email: string, password: string) => Promise<{ mfaRequired: boolean }>
+  login: (email: string, password: string) => Promise<{ mfaRequired: boolean; moduleSelectionRequired?: boolean }>
   verifyMfa: (email: string, otp: string) => Promise<void>
   googleLogin: (credential: string) => Promise<{ profileIncomplete: boolean }>
   logout: () => void
@@ -47,7 +47,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     localStorage.setItem('accessToken', data.data.token)
     localStorage.setItem('refreshToken', data.data.refreshToken)
     await fetchMe()
-    return { mfaRequired: false }
+    return { mfaRequired: false, moduleSelectionRequired: !!data.data.moduleSelectionRequired }
   }
 
   const verifyMfa = async (email: string, otp: string) => {

@@ -302,6 +302,8 @@ public class AuthService {
     // ─── Mapper ─────────────────────────────────────────────────────────────
     public AuthResponse buildAuthResponse(User user, String accessToken, String refreshToken) {
         String photoUrl = user.getProfilePhotoPath() != null ? "/api/v1/profile/photo" : null;
+        boolean needsModuleSelection = user.getRole() == Role.INSTRUCTOR && user.getAssignedModule() == null;
+        Long assignedModuleId = user.getAssignedModule() != null ? user.getAssignedModule().getId() : null;
         return AuthResponse.builder()
                 .token(accessToken)
                 .refreshToken(refreshToken)
@@ -310,6 +312,8 @@ public class AuthService {
                 .email(user.getEmail())
                 .role(user.getRole().name())
                 .photoUrl(photoUrl)
+                .moduleSelectionRequired(needsModuleSelection)
+                .assignedModuleId(assignedModuleId)
                 .build();
     }
 }

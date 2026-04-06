@@ -23,6 +23,7 @@ import Seating from '@/pages/Seating'
 import Claims from '@/pages/Claims'
 import TeamLeaderDashboard from '@/pages/TeamLeaderDashboard'
 import AcceptInvitation from '@/pages/AcceptInvitation'
+import SelectModule from '@/pages/SelectModule'
 import NotFound from '@/pages/NotFound'
 
 const queryClient = new QueryClient({
@@ -41,13 +42,14 @@ function RoleRedirect() {
   if (!user) return <Navigate to="/login" replace />
   if (user.role === 'STUDENT') return <Navigate to="/portal" replace />
   if (user.role === 'TEAM_LEADER') return <Navigate to="/leader" replace />
+  if (user.role === 'INSTRUCTOR' && user.moduleSelectionRequired) return <Navigate to="/select-module" replace />
   return <Navigate to="/dashboard" replace />
 }
 
 export default function App() {
   return (
     <QueryClientProvider client={queryClient}>
-      <BrowserRouter>
+      <BrowserRouter future={{ v7_relativeSplatPath: true }}>
         <AuthProvider>
           <Routes>
             <Route path="/login" element={<Login />} />
@@ -55,6 +57,7 @@ export default function App() {
             <Route path="/verify-email-pending" element={<VerifyEmailPending />} />
             <Route path="/forgot-password" element={<ForgotPassword />} />
             <Route path="/accept-invitation" element={<AcceptInvitation />} />
+            <Route path="/select-module" element={<SelectModule />} />
             <Route element={<AppLayout />}>
               <Route path="/dashboard" element={<Dashboard />} />
               <Route path="/students" element={<Students />} />

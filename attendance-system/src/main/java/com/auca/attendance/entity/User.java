@@ -75,6 +75,12 @@ public class User implements UserDetails {
     @Column(name = "google_id", length = 100, unique = true)
     private String googleId;
 
+    /** The single module assigned to an INSTRUCTOR. Null until they select one on first login. */
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "assigned_module_id")
+    @JsonIgnore
+    private Module assignedModule;
+
     /** Admin-controlled flag — deactivated accounts cannot log in. */
     @Column(nullable = false)
     @Builder.Default
