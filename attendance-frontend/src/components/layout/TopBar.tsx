@@ -15,7 +15,10 @@ import {
 } from '@/components/ui/dropdown-menu'
 import { useQuery } from '@tanstack/react-query'
 import client from '@/api/client'
-import { Search, Bell, X, Menu, UserCircle, LogOut } from 'lucide-react'
+import { useNotificationStream } from '@/hooks/useNotificationStream'
+import { useToast } from '@/hooks/use-toast'
+import { useTheme } from '@/context/ThemeContext'
+import { Search, Bell, X, Menu, UserCircle, LogOut, Sun, Moon } from 'lucide-react'
 
 interface SearchResult {
   type: 'student' | 'module' | 'page'
@@ -36,6 +39,7 @@ const PAGE_RESULTS: SearchResult[] = [
   { type: 'page', label: 'Marks & Grades', description: 'Manage marks & compute grades', route: '/marks' },
   { type: 'page', label: 'Reports', description: 'Download reports (Excel/PDF)', route: '/reports' },
   { type: 'page', label: 'Notifications', description: 'View notifications', route: '/notifications' },
+  { type: 'page', label: 'User Management', description: 'Manage roles and account status', route: '/users' },
   { type: 'page', label: 'Audit Log', description: 'View audit trail', route: '/audit-log' },
   { type: 'page', label: 'My Portal', description: 'Student self-service', route: '/portal' },
   { type: 'page', label: 'Profile & Settings', description: 'Manage your profile', route: '/profile' },
@@ -43,6 +47,7 @@ const PAGE_RESULTS: SearchResult[] = [
 
 export function TopBar({ onMenuClick }: TopBarProps) {
   const { user, hasRole, logout } = useAuth()
+  const { theme, toggleTheme } = useTheme()
   const navigate = useNavigate()
   const [query, setQuery] = useState('')
   const [open, setOpen] = useState(false)
@@ -50,11 +55,22 @@ export function TopBar({ onMenuClick }: TopBarProps) {
   const inputRef = useRef<HTMLInputElement>(null)
   const dropdownRef = useRef<HTMLDivElement>(null)
 
+  const isAdmin = hasRole('ADMIN')
+  const { toast } = useToast()
+
+  // Fetch initial unread count — SSE will invalidate this query in real time
   const { data: unreadCount = 0 } = useQuery({
     queryKey: ['unread-notification-count'],
     queryFn: () => client.get('/notifications/unread-count').then(r => r.data.data).catch(() => 0),
-    refetchInterval: 30_000,
-    enabled: hasRole('ADMIN'),
+    enabled: isAdmin,
+  })
+
+  // Real-time push: invalidates the unread count + shows toast when a notification arrives
+  useNotificationStream(isAdmin, (payload) => {
+    toast({
+      title: payload.title ?? 'New Notification',
+      description: payload.message ?? (payload.studentName ? `Student: ${payload.studentName}` : 'You have a new alert'),
+    })
   })
 
   useEffect(() => {
@@ -159,7 +175,7 @@ export function TopBar({ onMenuClick }: TopBarProps) {
     : undefined
 
   return (
-    <header className="flex h-16 items-center justify-between border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 sticky top-0 z-30 px-4 md:px-6">
+    <header className="flex h-16 items-center justify-between border-b border-[#E2E8F0] bg-[#FFFFFF]/95 backdrop-blur supports-[backdrop-filter]:bg-[#FFFFFF]/60 sticky top-0 z-30 px-4 md:px-6 dark:bg-[#111827]/95 dark:border-[#1E3A5F] dark:supports-[backdrop-filter]:bg-[#111827]/60">
       {/* Hamburger — mobile only */}
       <Button
         variant="ghost"
@@ -173,7 +189,7 @@ export function TopBar({ onMenuClick }: TopBarProps) {
 
       {/* Global Search */}
       <div className="relative flex-1 max-w-md" ref={dropdownRef}>
-        <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+        <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#94A3B8]" />
         <Input
           ref={inputRef}
           placeholder="Search... (Ctrl+K)"
@@ -184,7 +200,7 @@ export function TopBar({ onMenuClick }: TopBarProps) {
         />
         {query && (
           <button
-            className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+            className="absolute right-3 top-1/2 -translate-y-1/2 text-[#94A3B8] hover:text-[#0F172A] dark:hover:text-[#F1F5F9] transition-colors"
             onClick={() => { setQuery(''); setResults([]); setOpen(false) }}
           >
             <X className="h-4 w-4" />
@@ -192,19 +208,19 @@ export function TopBar({ onMenuClick }: TopBarProps) {
         )}
 
         {open && results.length > 0 && (
-          <div className="absolute top-full left-0 z-50 mt-1 w-full rounded-md border bg-popover p-1 shadow-lg">
+          <div className="absolute top-full left-0 z-50 mt-1 w-full rounded-xl border border-[#E2E8F0] bg-[#FFFFFF] p-1 shadow-[0_8px_24px_rgba(15,23,42,0.12)] dark:border-[#1E3A5F] dark:bg-[#111827]">
             {results.map((r, i) => (
               <button
                 key={`${r.type}-${i}`}
-                className="flex w-full items-center gap-3 rounded-sm px-3 py-2 text-left text-sm hover:bg-accent hover:text-accent-foreground"
+                className="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-left text-sm transition-colors hover:bg-[#F1F5F9] dark:hover:bg-[#1E293B]"
                 onClick={() => handleSelect(r)}
               >
-                <Badge variant="outline" className="shrink-0 text-xs capitalize w-16 justify-center">
+                <Badge variant="outline" className="shrink-0 text-[11px] capitalize w-16 justify-center">
                   {r.type}
                 </Badge>
                 <div className="min-w-0">
-                  <p className="font-medium truncate">{r.label}</p>
-                  <p className="text-xs text-muted-foreground truncate">{r.description}</p>
+                  <p className="font-medium truncate text-[#0F172A] dark:text-[#F1F5F9]">{r.label}</p>
+                  <p className="text-xs text-[#64748B] dark:text-[#94A3B8] truncate">{r.description}</p>
                 </div>
               </button>
             ))}
@@ -212,14 +228,28 @@ export function TopBar({ onMenuClick }: TopBarProps) {
         )}
 
         {open && query && results.length === 0 && (
-          <div className="absolute top-full left-0 z-50 mt-1 w-full rounded-md border bg-popover p-4 shadow-lg text-center text-sm text-muted-foreground">
+          <div className="absolute top-full left-0 z-50 mt-1 w-full rounded-xl border border-[#E2E8F0] bg-[#FFFFFF] p-4 shadow-[0_8px_24px_rgba(15,23,42,0.12)] text-center text-sm text-[#64748B] dark:border-[#1E3A5F] dark:bg-[#111827] dark:text-[#94A3B8]">
             No results found
           </div>
         )}
       </div>
 
-      {/* Right side: notifications + user dropdown */}
+      {/* Right side: theme toggle + notifications + user dropdown */}
       <div className="flex items-center gap-2 md:gap-3 ml-2 md:ml-4">
+        {/* Dark / Light mode toggle */}
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={toggleTheme}
+          aria-label={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
+          title={theme === 'dark' ? 'Light mode' : 'Dark mode'}
+        >
+          {theme === 'dark'
+            ? <Sun className="h-4 w-4" />
+            : <Moon className="h-4 w-4" />
+          }
+        </Button>
+
         {hasRole('ADMIN') && (
           <Button
             variant="ghost"
@@ -229,7 +259,7 @@ export function TopBar({ onMenuClick }: TopBarProps) {
           >
             <Bell className="h-5 w-5" />
             {unreadCount > 0 && (
-              <span className="absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-destructive text-[10px] font-bold text-destructive-foreground">
+              <span className="absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-[#DC2626] text-[10px] font-bold text-white">
                 {unreadCount > 9 ? '9+' : unreadCount}
               </span>
             )}
@@ -238,22 +268,22 @@ export function TopBar({ onMenuClick }: TopBarProps) {
 
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <button className="flex items-center gap-2 rounded-full outline-none focus-visible:ring-2 focus-visible:ring-ring hover:opacity-80 transition-opacity">
+            <button className="flex items-center gap-2 rounded-full outline-none focus-visible:ring-2 focus-visible:ring-[#4F46E5]/30 hover:opacity-80 transition-opacity">
               <Avatar className="h-8 w-8">
                 <AvatarImage src={photoSrc} alt={user?.name} />
-                <AvatarFallback className="text-xs bg-primary text-primary-foreground font-medium">
+                <AvatarFallback className="text-xs bg-[#4F46E5] text-white font-medium">
                   {initials}
                 </AvatarFallback>
               </Avatar>
-              <span className="hidden sm:block text-sm font-medium">{user?.name}</span>
+              <span className="hidden sm:block text-sm font-medium text-[#0F172A] dark:text-[#F1F5F9]">{user?.name}</span>
             </button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-52">
             <DropdownMenuLabel className="font-normal">
               <div className="flex flex-col space-y-1">
                 <p className="text-sm font-medium leading-none">{user?.name}</p>
-                <p className="text-xs leading-none text-muted-foreground">{user?.email}</p>
-                <p className="text-xs leading-none text-muted-foreground capitalize">{user?.role?.toLowerCase()}</p>
+                <p className="text-xs leading-none text-[#64748B] dark:text-[#94A3B8]">{user?.email}</p>
+                <p className="text-xs leading-none text-[#64748B] dark:text-[#94A3B8] capitalize">{user?.role?.toLowerCase()}</p>
               </div>
             </DropdownMenuLabel>
             <DropdownMenuSeparator />
@@ -264,7 +294,7 @@ export function TopBar({ onMenuClick }: TopBarProps) {
             <DropdownMenuSeparator />
             <DropdownMenuItem
               onClick={logout}
-              className="text-destructive focus:text-destructive focus:bg-destructive/10"
+              className="text-[#DC2626] focus:text-[#DC2626] focus:bg-[#FEF2F2] dark:focus:bg-[#DC2626]/10"
             >
               <LogOut className="mr-2 h-4 w-4" />
               Sign Out

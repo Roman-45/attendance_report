@@ -75,6 +75,31 @@ public class User implements UserDetails {
     @Column(name = "google_id", length = 100, unique = true)
     private String googleId;
 
+    /** The single module assigned to an INSTRUCTOR. Null until they select one on first login. */
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "assigned_module_id")
+    @JsonIgnore
+    private Module assignedModule;
+
+    /** Admin-controlled flag — deactivated accounts cannot log in. */
+    @Column(nullable = false)
+    @Builder.Default
+    private Boolean active = true;
+
+    /** Unique token sent in the invitation email — used to accept the invite and set a password. */
+    @Column(name = "invitation_token", length = 100)
+    private String invitationToken;
+
+    /** The user (admin) who invited this user. */
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "invited_by")
+    @JsonIgnore
+    private User invitedBy;
+
+    /** When the invitation email was sent. */
+    @Column(name = "invitation_sent_at")
+    private LocalDateTime invitationSentAt;
+
     @PrePersist
     protected void onCreate() {
         createdAt = OffsetDateTime.now();
@@ -111,5 +136,5 @@ public class User implements UserDetails {
 
     @JsonIgnore
     @Override
-    public boolean isEnabled() { return Boolean.TRUE.equals(emailVerified); }
+    public boolean isEnabled() { return Boolean.TRUE.equals(emailVerified) && Boolean.TRUE.equals(active); }
 }

@@ -15,5 +15,6 @@ public class ModuleResponse {
     private String description;
     private LocalDate startDate;
     private LocalDate endDate;
+    private String status;
     private List<String> instructors;
 }

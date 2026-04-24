@@ -1,9 +1,12 @@
 package com.auca.attendance.controller;
 
 import com.auca.attendance.dto.request.ModuleRequest;
+import com.auca.attendance.dto.request.ModuleSelectionRequest;
+import com.auca.attendance.dto.request.ModuleStatusRequest;
 import com.auca.attendance.dto.response.ApiResponse;
 import com.auca.attendance.dto.response.ModuleResponse;
 import com.auca.attendance.entity.User;
+import com.auca.attendance.enums.ModuleStatus;
 import com.auca.attendance.service.ModuleService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -22,14 +25,57 @@ public class ModuleController {
 
     private final ModuleService moduleService;
 
+    /**
+     * GET /modules
+     * - ADMIN / FACILITATOR: returns all modules.
+     * - INSTRUCTOR: returns only their assigned module (empty list if none yet).
+     */
     @GetMapping
-    public ResponseEntity<ApiResponse<List<ModuleResponse>>> getAll() {
-        return ResponseEntity.ok(ApiResponse.success(moduleService.getAll()));
+    public ResponseEntity<ApiResponse<List<ModuleResponse>>> getAll(
+            @AuthenticationPrincipal User currentUser) {
+        return ResponseEntity.ok(ApiResponse.success(moduleService.getForUser(currentUser)));
     }
 
     @GetMapping("/{id}")
     public ResponseEntity<ApiResponse<ModuleResponse>> getById(@PathVariable Long id) {
         return ResponseEntity.ok(ApiResponse.success(moduleService.getById(id)));
+    }
+
+    /** GET /modules/available — unassigned modules for instructor first-login selection. */
+    @GetMapping("/available")
+    @PreAuthorize("hasRole('INSTRUCTOR')")
+    public ResponseEntity<ApiResponse<List<ModuleResponse>>> getAvailable() {
+        return ResponseEntity.ok(ApiResponse.success(moduleService.getAvailableForSelection()));
+    }
+
+    /** POST /modules/select — instructor selects their module (one-time, first login). */
+    @PostMapping("/select")
+    @PreAuthorize("hasRole('INSTRUCTOR')")
+    public ResponseEntity<ApiResponse<ModuleResponse>> selectModule(
+            @Valid @RequestBody ModuleSelectionRequest request,
+            @AuthenticationPrincipal User currentUser) {
+        return ResponseEntity.ok(ApiResponse.success(
+                "Module selected successfully",
+                moduleService.selectModule(currentUser, request.getModuleId())));
+    }
+
+    /** PATCH /modules/{id}/status — instructor starts (ACTIVE) or closes (CLOSED) their module. */
+    @PatchMapping("/{id}/status")
+    @PreAuthorize("hasRole('INSTRUCTOR')")
+    public ResponseEntity<ApiResponse<ModuleResponse>> updateStatus(
+            @PathVariable Long id,
+            @Valid @RequestBody ModuleStatusRequest request,
+            @AuthenticationPrincipal User currentUser) {
+        ModuleStatus newStatus;
+        try {
+            newStatus = ModuleStatus.valueOf(request.getStatus().toUpperCase());
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest()
+                    .body(ApiResponse.error("Invalid status. Use ACTIVE or CLOSED."));
+        }
+        return ResponseEntity.ok(ApiResponse.success(
+                "Module status updated",
+                moduleService.updateStatus(id, newStatus, currentUser)));
     }
 
     @PostMapping

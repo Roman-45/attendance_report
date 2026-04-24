@@ -29,4 +29,12 @@ public class AuthResponse {
      */
     @Builder.Default
     private boolean profileIncomplete = false;
+
+    /** True when role is INSTRUCTOR and no module has been selected yet. */
+    @Builder.Default
+    private boolean moduleSelectionRequired = false;
+
+    /** The module ID assigned to this instructor (null if none yet). */
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    private Long assignedModuleId;
 }

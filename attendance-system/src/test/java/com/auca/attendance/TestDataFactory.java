@@ -52,6 +52,24 @@ public final class TestDataFactory {
                 .build();
     }
 
+    public static User teamLeaderUser() {
+        return User.builder()
+                .name("Test Team Leader")
+                .email("teamleader@test.auca.ac.rw")
+                .password("$2a$10$ARR1W925Vg6QKiabe38WheykVYXCHKfQx2hqJDIxCup3ltK2evYii") // Admin@1234
+                .role(Role.TEAM_LEADER)
+                .build();
+    }
+
+    public static User studentUser(String suffix) {
+        return User.builder()
+                .name("Student User " + suffix)
+                .email("studentuser" + suffix + "@test.auca.ac.rw")
+                .password("$2a$10$ARR1W925Vg6QKiabe38WheykVYXCHKfQx2hqJDIxCup3ltK2evYii")
+                .role(Role.STUDENT)
+                .build();
+    }
+
     public static Student student(String suffix) {
         return Student.builder()
                 .studentId("STU" + suffix)

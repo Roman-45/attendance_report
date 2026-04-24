@@ -22,14 +22,12 @@ export function EnrollmentDialog({ moduleId, moduleName, open, onOpenChange }: P
   const queryClient = useQueryClient()
   const { toast } = useToast()
 
-  // Enrolled students for this module
   const { data: enrollments = [], isLoading: loadingEnrollments } = useQuery({
     queryKey: ['enrollments', moduleId],
     queryFn: () => client.get(`/modules/${moduleId}/enrollments`).then(r => r.data.data ?? []),
     enabled: open,
   })
 
-  // All students (for adding)
   const { data: allStudentsData } = useQuery({
     queryKey: ['students-all', studentSearch],
     queryFn: () =>
@@ -88,13 +86,13 @@ export function EnrollmentDialog({ moduleId, moduleName, open, onOpenChange }: P
         <div className="flex-1 overflow-auto space-y-6">
           {/* Enrolled students */}
           <div>
-            <h3 className="text-sm font-semibold mb-2">Enrolled Students ({(enrollments as Enrollment[]).length})</h3>
+            <h3 className="text-sm font-semibold mb-2 text-[#0F172A] dark:text-[#F1F5F9]">Enrolled Students ({(enrollments as Enrollment[]).length})</h3>
             {loadingEnrollments ? (
-              <p className="text-sm text-muted-foreground py-4 text-center">Loading...</p>
+              <p className="text-sm text-[#64748B] dark:text-[#94A3B8] py-4 text-center">Loading...</p>
             ) : (enrollments as Enrollment[]).length === 0 ? (
-              <p className="text-sm text-muted-foreground py-4 text-center">No students enrolled yet</p>
+              <p className="text-sm text-[#64748B] dark:text-[#94A3B8] py-4 text-center">No students enrolled yet</p>
             ) : (
-              <div className="rounded-md border max-h-48 overflow-auto">
+              <div className="rounded-lg border border-[#E2E8F0] dark:border-[#1E3A5F] max-h-48 overflow-auto">
                 <Table>
                   <TableHeader>
                     <TableRow>
@@ -109,12 +107,12 @@ export function EnrollmentDialog({ moduleId, moduleName, open, onOpenChange }: P
                       <TableRow key={e.enrollmentId}>
                         <TableCell className="font-mono text-xs">{e.studentStudentId}</TableCell>
                         <TableCell>{e.studentName}</TableCell>
-                        <TableCell className="text-muted-foreground text-xs">{e.program}</TableCell>
+                        <TableCell className="text-[#64748B] dark:text-[#94A3B8] text-xs">{e.program}</TableCell>
                         <TableCell>
                           <Button
                             variant="ghost"
                             size="icon"
-                            className="h-7 w-7 text-destructive hover:text-destructive"
+                            className="h-7 w-7 text-[#DC2626] hover:text-[#DC2626] hover:bg-[#FEF2F2] dark:hover:bg-[#DC2626]/10"
                             onClick={() => removeMutation.mutate(e.studentId)}
                             disabled={removeMutation.isPending}
                           >
@@ -131,9 +129,9 @@ export function EnrollmentDialog({ moduleId, moduleName, open, onOpenChange }: P
 
           {/* Add students */}
           <div>
-            <h3 className="text-sm font-semibold mb-2">Add Students</h3>
+            <h3 className="text-sm font-semibold mb-2 text-[#0F172A] dark:text-[#F1F5F9]">Add Students</h3>
             <div className="relative mb-2">
-              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#94A3B8]" />
               <Input
                 className="pl-9"
                 placeholder="Search students to add..."
@@ -142,11 +140,11 @@ export function EnrollmentDialog({ moduleId, moduleName, open, onOpenChange }: P
               />
             </div>
             {unenrolledStudents.length === 0 ? (
-              <p className="text-sm text-muted-foreground py-4 text-center">
+              <p className="text-sm text-[#64748B] dark:text-[#94A3B8] py-4 text-center">
                 {allStudents.length === 0 ? 'No students found' : 'All students are already enrolled'}
               </p>
             ) : (
-              <div className="rounded-md border max-h-48 overflow-auto">
+              <div className="rounded-lg border border-[#E2E8F0] dark:border-[#1E3A5F] max-h-48 overflow-auto">
                 <Table>
                   <TableHeader>
                     <TableRow>
@@ -168,12 +166,12 @@ export function EnrollmentDialog({ moduleId, moduleName, open, onOpenChange }: P
                             type="checkbox"
                             checked={selectedIds.includes(s.id)}
                             onChange={() => toggleSelect(s.id)}
-                            className="h-4 w-4"
+                            className="h-4 w-4 accent-[#4F46E5]"
                           />
                         </TableCell>
                         <TableCell className="font-mono text-xs">{s.studentId}</TableCell>
                         <TableCell>{s.name}</TableCell>
-                        <TableCell className="text-muted-foreground text-xs">{s.program}</TableCell>
+                        <TableCell className="text-[#64748B] dark:text-[#94A3B8] text-xs">{s.program}</TableCell>
                       </TableRow>
                     ))}
                   </TableBody>
@@ -184,7 +182,7 @@ export function EnrollmentDialog({ moduleId, moduleName, open, onOpenChange }: P
         </div>
 
         <DialogFooter className="mt-4 flex items-center justify-between">
-          <span className="text-sm text-muted-foreground">
+          <span className="text-sm text-[#64748B] dark:text-[#94A3B8]">
             {selectedIds.length > 0 ? `${selectedIds.length} student${selectedIds.length > 1 ? 's' : ''} selected` : ''}
           </span>
           <div className="flex gap-2">

@@ -38,6 +38,7 @@ public class ReportGenerationService {
     private final AttendanceRecordRepository recordRepo;
     private final GradeComputationService gradeService;
     private final MarkColumnRepository columnRepo;
+    private final MarkEntryRepository markEntryRepo;
 
     // ─── Attendance Excel ────────────────────────────────────────────────────
 
@@ -238,6 +239,210 @@ public class ReportGenerationService {
             }
             table.addCell(g.getWeightedAverage().toPlainString());
             table.addCell(g.getGradeLetter());
+        }
+
+        doc.add(table);
+        doc.close();
+        return out.toByteArray();
+    }
+
+    // ─── Student Self-Service Reports ────────────────────────────────────────
+
+    /**
+     * Generate a per-module attendance summary for one student (Excel).
+     */
+    @Transactional(readOnly = true)
+    public byte[] generateStudentAttendanceExcel(Long studentId) throws IOException {
+        List<Enrollment> enrollments = enrollmentRepo.findByStudentId(studentId);
+
+        try (XSSFWorkbook wb = new XSSFWorkbook(); ByteArrayOutputStream out = new ByteArrayOutputStream()) {
+            Sheet sheet = wb.createSheet("My Attendance");
+
+            CellStyle headerStyle = wb.createCellStyle();
+            Font headerFont = wb.createFont();
+            headerFont.setBold(true);
+            headerStyle.setFont(headerFont);
+
+            Row header = sheet.createRow(0);
+            header.createCell(0).setCellValue("Module Code");
+            header.createCell(1).setCellValue("Module Name");
+            header.createCell(2).setCellValue("Sessions Attended");
+            header.createCell(3).setCellValue("Total Sessions");
+            header.createCell(4).setCellValue("Attendance %");
+            for (int i = 0; i <= 4; i++) header.getCell(i).setCellStyle(headerStyle);
+
+            int rowIdx = 1;
+            for (Enrollment e : enrollments) {
+                Module module = e.getModule();
+                List<AttendanceSession> sessions = sessionRepo.findByModuleIdOrderBySessionDateDescStartTimeDesc(module.getId());
+                int present = 0, total = 0;
+                for (AttendanceSession s : sessions) {
+                    var rec = recordRepo.findBySessionIdAndStudentId(s.getId(), studentId);
+                    if (rec.isPresent()) {
+                        total++;
+                        String status = rec.get().getStatus();
+                        if ("PRESENT".equals(status) || "LATE".equals(status)) present++;
+                    }
+                }
+                double pct = total > 0 ? Math.round((double) present / total * 1000.0) / 10.0 : 0;
+                Row row = sheet.createRow(rowIdx++);
+                row.createCell(0).setCellValue(module.getCode());
+                row.createCell(1).setCellValue(module.getName());
+                row.createCell(2).setCellValue(present);
+                row.createCell(3).setCellValue(total);
+                row.createCell(4).setCellValue(pct + "%");
+            }
+
+            for (int i = 0; i <= 4; i++) sheet.autoSizeColumn(i);
+            wb.write(out);
+            return out.toByteArray();
+        }
+    }
+
+    /**
+     * Generate a per-module attendance summary for one student (PDF).
+     */
+    @Transactional(readOnly = true)
+    public byte[] generateStudentAttendancePdf(Long studentId) throws IOException {
+        List<Enrollment> enrollments = enrollmentRepo.findByStudentId(studentId);
+
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+        Document doc = new Document(new PdfDocument(new PdfWriter(out)));
+
+        doc.add(new Paragraph("My Attendance Report")
+                .setBold().setFontSize(14).setTextAlignment(TextAlignment.CENTER));
+        doc.add(new Paragraph(" "));
+
+        Table table = new Table(UnitValue.createPercentArray(new float[]{15, 35, 15, 15, 20}))
+                .useAllAvailableWidth();
+        table.addHeaderCell(new Cell().add(new Paragraph("Code").setBold()));
+        table.addHeaderCell(new Cell().add(new Paragraph("Module").setBold()));
+        table.addHeaderCell(new Cell().add(new Paragraph("Attended").setBold()));
+        table.addHeaderCell(new Cell().add(new Paragraph("Total").setBold()));
+        table.addHeaderCell(new Cell().add(new Paragraph("Att%").setBold()));
+
+        for (Enrollment e : enrollments) {
+            Module module = e.getModule();
+            List<AttendanceSession> sessions = sessionRepo.findByModuleIdOrderBySessionDateDescStartTimeDesc(module.getId());
+            int present = 0, total = 0;
+            for (AttendanceSession s : sessions) {
+                var rec = recordRepo.findBySessionIdAndStudentId(s.getId(), studentId);
+                if (rec.isPresent()) {
+                    total++;
+                    String status = rec.get().getStatus();
+                    if ("PRESENT".equals(status) || "LATE".equals(status)) present++;
+                }
+            }
+            double pct = total > 0 ? Math.round((double) present / total * 1000.0) / 10.0 : 0;
+            table.addCell(module.getCode());
+            table.addCell(module.getName());
+            table.addCell(String.valueOf(present));
+            table.addCell(String.valueOf(total));
+            table.addCell(pct + "%");
+        }
+
+        doc.add(table);
+        doc.close();
+        return out.toByteArray();
+    }
+
+    /**
+     * Generate a marks summary for one student across all enrolled modules (Excel).
+     */
+    @Transactional(readOnly = true)
+    public byte[] generateStudentMarksExcel(Long studentId) throws IOException {
+        List<Enrollment> enrollments = enrollmentRepo.findByStudentId(studentId);
+
+        try (XSSFWorkbook wb = new XSSFWorkbook(); ByteArrayOutputStream out = new ByteArrayOutputStream()) {
+            Sheet sheet = wb.createSheet("My Marks");
+
+            CellStyle headerStyle = wb.createCellStyle();
+            Font headerFont = wb.createFont();
+            headerFont.setBold(true);
+            headerStyle.setFont(headerFont);
+
+            Row header = sheet.createRow(0);
+            header.createCell(0).setCellValue("Module Code");
+            header.createCell(1).setCellValue("Module Name");
+            header.createCell(2).setCellValue("Assessment");
+            header.createCell(3).setCellValue("Score");
+            header.createCell(4).setCellValue("Max Score");
+            header.createCell(5).setCellValue("Percentage");
+            for (int i = 0; i <= 5; i++) header.getCell(i).setCellStyle(headerStyle);
+
+            int rowIdx = 1;
+            for (Enrollment e : enrollments) {
+                Module module = e.getModule();
+                List<MarkColumn> columns = columnRepo.findByModuleId(module.getId());
+                for (MarkColumn col : columns) {
+                    var entry = markEntryRepo.findByColumnIdAndStudentId(col.getId(), studentId);
+                    Row row = sheet.createRow(rowIdx++);
+                    row.createCell(0).setCellValue(module.getCode());
+                    row.createCell(1).setCellValue(module.getName());
+                    row.createCell(2).setCellValue(col.getName());
+                    if (entry.isPresent()) {
+                        double score = entry.get().getScore().doubleValue();
+                        double max = col.getMaxScore().doubleValue();
+                        row.createCell(3).setCellValue(score);
+                        row.createCell(4).setCellValue(max);
+                        row.createCell(5).setCellValue(max > 0 ? Math.round(score / max * 1000.0) / 10.0 + "%" : "—");
+                    } else {
+                        row.createCell(3).setCellValue("—");
+                        row.createCell(4).setCellValue(col.getMaxScore().doubleValue());
+                        row.createCell(5).setCellValue("—");
+                    }
+                }
+            }
+
+            for (int i = 0; i <= 5; i++) sheet.autoSizeColumn(i);
+            wb.write(out);
+            return out.toByteArray();
+        }
+    }
+
+    /**
+     * Generate a marks summary for one student across all enrolled modules (PDF).
+     */
+    @Transactional(readOnly = true)
+    public byte[] generateStudentMarksPdf(Long studentId) throws IOException {
+        List<Enrollment> enrollments = enrollmentRepo.findByStudentId(studentId);
+
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+        Document doc = new Document(new PdfDocument(new PdfWriter(out)));
+
+        doc.add(new Paragraph("My Marks Report")
+                .setBold().setFontSize(14).setTextAlignment(TextAlignment.CENTER));
+        doc.add(new Paragraph(" "));
+
+        Table table = new Table(UnitValue.createPercentArray(new float[]{12, 30, 25, 10, 10, 13}))
+                .useAllAvailableWidth();
+        table.addHeaderCell(new Cell().add(new Paragraph("Code").setBold()));
+        table.addHeaderCell(new Cell().add(new Paragraph("Module").setBold()));
+        table.addHeaderCell(new Cell().add(new Paragraph("Assessment").setBold()));
+        table.addHeaderCell(new Cell().add(new Paragraph("Score").setBold()));
+        table.addHeaderCell(new Cell().add(new Paragraph("Max").setBold()));
+        table.addHeaderCell(new Cell().add(new Paragraph("Pct").setBold()));
+
+        for (Enrollment e : enrollments) {
+            Module module = e.getModule();
+            List<MarkColumn> columns = columnRepo.findByModuleId(module.getId());
+            for (MarkColumn col : columns) {
+                var entry = markEntryRepo.findByColumnIdAndStudentId(col.getId(), studentId);
+                table.addCell(module.getCode());
+                table.addCell(module.getName());
+                table.addCell(col.getName());
+                if (entry.isPresent()) {
+                    double score = entry.get().getScore().doubleValue();
+                    double max = col.getMaxScore().doubleValue();
+                    table.addCell(entry.get().getScore().toPlainString());
+                    table.addCell(col.getMaxScore().toPlainString());
+                    table.addCell(max > 0 ? Math.round(score / max * 1000.0) / 10.0 + "%" : "—");
+                } else {
+                    table.addCell("—");
+                    table.addCell(col.getMaxScore().toPlainString());
+                    table.addCell("—");
+                }
+            }
         }
 
         doc.add(table);

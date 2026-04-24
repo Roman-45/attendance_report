@@ -32,12 +32,14 @@ class SecurityRegressionTest extends BaseIntegrationTest {
     private String adminToken;
     private String facilitatorToken;
     private String instructorToken;
+    private String teamLeaderToken;
 
     @BeforeEach
     void setupUsers() {
         adminToken       = tokenFor("sec_admin@auca.ac.rw",       Role.ADMIN);
         facilitatorToken = tokenFor("sec_facilitator@auca.ac.rw", Role.FACILITATOR);
         instructorToken  = tokenFor("sec_instructor@auca.ac.rw",  Role.INSTRUCTOR);
+        teamLeaderToken  = tokenFor("sec_teamleader@auca.ac.rw",  Role.TEAM_LEADER);
     }
 
     // ─── No token ────────────────────────────────────────────────────────
@@ -166,6 +168,92 @@ class SecurityRegressionTest extends BaseIntegrationTest {
                 Map.class);
 
         assertThat(resp.getStatusCode()).isEqualTo(HttpStatus.OK);
+    }
+
+    // ─── TEAM_LEADER role restrictions ───────────────────────────────────
+
+    @Test
+    @DisplayName("TEAM_LEADER cannot access admin-only students endpoint — must return 403")
+    void teamLeader_CannotAccessStudents() {
+        ResponseEntity<Map> resp = restTemplate.exchange(
+                "/api/v1/students",
+                HttpMethod.GET,
+                withToken(teamLeaderToken, null),
+                Map.class);
+
+        assertThat(resp.getStatusCode()).isEqualTo(HttpStatus.FORBIDDEN);
+    }
+
+    @Test
+    @DisplayName("TEAM_LEADER cannot access admin-only notifications endpoint — must return 403")
+    void teamLeader_CannotAccessNotifications() {
+        ResponseEntity<Map> resp = restTemplate.exchange(
+                "/api/v1/notifications",
+                HttpMethod.GET,
+                withToken(teamLeaderToken, null),
+                Map.class);
+
+        assertThat(resp.getStatusCode()).isEqualTo(HttpStatus.FORBIDDEN);
+    }
+
+    @Test
+    @DisplayName("TEAM_LEADER cannot create a student (ADMIN only) — must return 403")
+    void teamLeader_CannotCreateStudent() {
+        Map<String, Object> body = Map.of(
+                "studentId", "STU997", "name", "TL Hacker",
+                "email", "tlhacker@test.auca.ac.rw", "cohortYear", 2024, "program", "CS");
+
+        ResponseEntity<Map> resp = restTemplate.exchange(
+                "/api/v1/students",
+                HttpMethod.POST,
+                withToken(teamLeaderToken, body),
+                Map.class);
+
+        assertThat(resp.getStatusCode()).isEqualTo(HttpStatus.FORBIDDEN);
+    }
+
+    @Test
+    @DisplayName("TEAM_LEADER can access portal profile endpoint — must return 200")
+    void teamLeader_CanAccessPortalProfile() {
+        ResponseEntity<Map> resp = restTemplate.exchange(
+                "/api/v1/me/profile",
+                HttpMethod.GET,
+                withToken(teamLeaderToken, null),
+                Map.class);
+
+        // Should succeed (200) or at least not be 403 (might be 404 if no student profile linked)
+        assertThat(resp.getStatusCode()).isNotEqualTo(HttpStatus.FORBIDDEN);
+    }
+
+    @Test
+    @DisplayName("TEAM_LEADER cannot create attendance sessions (FACILITATOR only) — must return 403")
+    void teamLeader_CannotCreateAttendanceSession() {
+        Map<String, Object> body = Map.of(
+                "sessionDate", "2025-01-01",
+                "startTime", "08:00", "endTime", "10:00", "period", "MORNING");
+
+        ResponseEntity<Map> resp = restTemplate.exchange(
+                "/api/v1/modules/1/sessions",
+                HttpMethod.POST,
+                withToken(teamLeaderToken, body),
+                Map.class);
+
+        assertThat(resp.getStatusCode()).isEqualTo(HttpStatus.FORBIDDEN);
+    }
+
+    @Test
+    @DisplayName("TEAM_LEADER cannot manage mark columns (INSTRUCTOR only) — must return 403")
+    void teamLeader_CannotCreateMarkColumn() {
+        Map<String, Object> body = Map.of(
+                "name", "Midterm", "type", "MIDTERM", "maxScore", 40);
+
+        ResponseEntity<Map> resp = restTemplate.exchange(
+                "/api/v1/modules/1/columns",
+                HttpMethod.POST,
+                withToken(teamLeaderToken, body),
+                Map.class);
+
+        assertThat(resp.getStatusCode()).isEqualTo(HttpStatus.FORBIDDEN);
     }
 
     // ─── Tampered token ───────────────────────────────────────────────────

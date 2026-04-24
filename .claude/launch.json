@@ -1,0 +1,20 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "frontend",
+      "runtimeExecutable": "/usr/local/bin/node",
+      "runtimeArgs": ["/Users/ngomi/Documents/Interneship/attendance_report/attendance-frontend/node_modules/.bin/vite", "--host"],
+      "port": 5173
+    },
+    {
+      "name": "backend",
+      "runtimeExecutable": "/Library/Java/JavaVirtualMachines/jdk-23.jdk/Contents/Home/bin/java",
+      "runtimeArgs": [
+        "-jar",
+        "/Users/ngomi/Documents/Interneship/attendance_report/attendance-system/target/attendance-system-0.0.1-SNAPSHOT.jar"
+      ],
+      "port": 8080
+    }
+  ]
+}

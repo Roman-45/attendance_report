@@ -1,4 +1,4 @@
-export type Role = 'ADMIN' | 'FACILITATOR' | 'INSTRUCTOR' | 'STUDENT'
+export type Role = 'ADMIN' | 'FACILITATOR' | 'INSTRUCTOR' | 'TEAM_LEADER' | 'STUDENT'
 
 export interface User {
   id: number
@@ -7,6 +7,8 @@ export interface User {
   role: Role
   mfaEnabled: boolean
   photoUrl?: string | null
+  moduleSelectionRequired?: boolean
+  assignedModuleId?: number | null
 }
 
 export interface AuthTokens {
@@ -45,6 +47,8 @@ export interface Module {
   description: string
   startDate: string
   endDate: string
+  status: 'DRAFT' | 'ACTIVE' | 'CLOSED'
+  instructors?: string[]
 }
 
 export interface AttendanceSession {
@@ -85,20 +89,27 @@ export interface MarkEntry {
 
 export interface Notification {
   id: number
-  message: string
   type: string
-  read: boolean
+  title: string
+  message: string
+  isRead: boolean
+  studentId?: number
+  studentName?: string
+  moduleId?: number
+  moduleName?: string
   createdAt: string
 }
 
 export interface ModuleDashboard {
   moduleId: number
   moduleName: string
-  totalStudents: number
+  moduleCode: string
+  totalEnrolled: number
   totalSessions: number
   averageAttendancePercent: number
-  studentsAboveThreshold: number
-  averageMarkPercent: number
+  absenceThreshold: number
+  studentsAtRisk: number
+  averageGrade: number | null
 }
 
 export interface GradeResponse {
@@ -128,4 +139,72 @@ export interface AuditLogEntry {
   performedBy: string
   performedAt: string
   details: string
+}
+
+// ── Teams, Seating & Claims ─────────────────────────────────
+
+export type ClaimType = 'ATTENDANCE' | 'MARK' | 'SEAT'
+export type ClaimStatus = 'PENDING' | 'APPROVED' | 'REJECTED'
+
+export interface Team {
+  id: number
+  moduleId: number
+  moduleName: string
+  name: string
+  leaderStudentId: number | null
+  leaderStudentName: string | null
+  memberCount: number
+  createdAt: string
+}
+
+export interface TeamMember {
+  id: number
+  studentId: number
+  studentName: string
+  registrationNumber: string
+  joinedAt: string
+}
+
+export interface ClassroomLayout {
+  id: number
+  moduleId: number
+  moduleName: string
+  totalRows: number
+  columnsPerRow: number
+  columnGroups: number
+  seats: SeatAssignment[]
+}
+
+export interface SeatAssignment {
+  id: number
+  studentId: number
+  studentName: string
+  registrationNumber: string
+  rowNumber: number
+  columnNumber: number
+  assignedByName: string | null
+  assignedAt: string
+}
+
+export interface Claim {
+  id: number
+  studentId: number
+  studentName: string
+  moduleId: number
+  moduleName: string
+  claimType: ClaimType
+  targetId: number | null
+  description: string
+  status: ClaimStatus
+  resolutionNote: string | null
+  resolvedByName: string | null
+  resolvedAt: string | null
+  createdAt: string
+}
+
+export interface ImportResult {
+  totalRows: number
+  imported: number
+  skipped: number
+  errors: string[]
 }

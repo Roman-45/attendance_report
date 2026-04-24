@@ -1,0 +1,312 @@
+@custom-variant dark (&:is(.dark *));
+
+:root {
+  /* ─── Base font ─────────────────────────────────── */
+  --font-size: 16px;
+
+  /* ─── Brand ─────────────────────────────────────── */
+  /* AUCA Navy — the one accent colour */
+  --brand:           #1B3A6B;
+  --brand-hover:     #15305a;
+  --brand-light:     #EEF2F9;
+  --brand-foreground: #ffffff;
+
+  /* ─── Surfaces ───────────────────────────────────── */
+  --background:      #F7F8FA;   /* off-white page canvas */
+  --surface:         #ffffff;   /* card / panel / input */
+  --surface-raised:  #ffffff;   /* modals, popovers */
+
+  /* ─── Borders ────────────────────────────────────── */
+  --border:          #E2E8F0;
+  --border-strong:   #CBD5E1;
+
+  /* ─── Text ───────────────────────────────────────── */
+  --foreground:      #111827;   /* primary text */
+  --muted-foreground:#6B7280;   /* secondary/helper text */
+  --subtle-foreground:#9CA3AF;  /* placeholder, disabled */
+
+  /* ─── Semantic status ────────────────────────────── */
+  --status-present:    #16a34a;
+  --status-present-bg: #f0fdf4;
+  --status-present-border: #bbf7d0;
+
+  --status-absent:     #dc2626;
+  --status-absent-bg:  #fef2f2;
+  --status-absent-border: #fecaca;
+
+  --status-late:       #d97706;
+  --status-late-bg:    #fffbeb;
+  --status-late-border:#fde68a;
+
+  --status-excused:    #2563eb;
+  --status-excused-bg: #eff6ff;
+  --status-excused-border:#bfdbfe;
+
+  /* Module status */
+  --status-draft:      #6B7280;
+  --status-draft-bg:   #F3F4F6;
+  --status-draft-border:#D1D5DB;
+
+  --status-active:     #16a34a;
+  --status-active-bg:  #f0fdf4;
+  --status-active-border:#bbf7d0;
+
+  --status-closed:     #9CA3AF;
+  --status-closed-bg:  #F9FAFB;
+  --status-closed-border:#E5E7EB;
+
+  /* Invitation status */
+  --status-pending:    #d97706;
+  --status-pending-bg: #fffbeb;
+  --status-accepted:   #16a34a;
+  --status-accepted-bg:#f0fdf4;
+
+  /* ─── Feedback colours ───────────────────────────── */
+  --success:          #16a34a;
+  --success-bg:       #f0fdf4;
+  --warning:          #d97706;
+  --warning-bg:       #fffbeb;
+  --destructive:      #dc2626;
+  --destructive-bg:   #fef2f2;
+  --destructive-foreground: #ffffff;
+  --info:             #2563eb;
+  --info-bg:          #eff6ff;
+
+  /* ─── shadcn/ui compat aliases ───────────────────── */
+  --card:                    var(--surface);
+  --card-foreground:         var(--foreground);
+  --popover:                 var(--surface-raised);
+  --popover-foreground:      var(--foreground);
+  --primary:                 var(--brand);
+  --primary-foreground:      var(--brand-foreground);
+  --secondary:               #EEF2F9;
+  --secondary-foreground:    var(--brand);
+  --muted:                   #F3F4F6;
+  --accent:                  var(--brand-light);
+  --accent-foreground:       var(--brand);
+  --input:                   transparent;
+  --input-background:        var(--surface);
+  --switch-background:       #CBD5E1;
+  --ring:                    var(--brand);
+
+  /* ─── Sidebar tokens ─────────────────────────────── */
+  --sidebar:                 var(--surface);
+  --sidebar-foreground:      var(--foreground);
+  --sidebar-primary:         var(--brand);
+  --sidebar-primary-foreground: var(--brand-foreground);
+  --sidebar-accent:          var(--brand-light);
+  --sidebar-accent-foreground: var(--brand);
+  --sidebar-border:          var(--border);
+  --sidebar-ring:            var(--brand);
+
+  /* ─── Chart colours ──────────────────────────────── */
+  --chart-1: #1B3A6B;
+  --chart-2: #16a34a;
+  --chart-3: #d97706;
+  --chart-4: #2563eb;
+  --chart-5: #dc2626;
+
+  /* ─── Shape ──────────────────────────────────────── */
+  /* Unified 6px radius everywhere */
+  --radius: 0.375rem;   /* 6px */
+
+  /* ─── Shadows (minimal — border-driven design) ───── */
+  --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+  --shadow:    0 1px 3px 0 rgb(0 0 0 / 0.08), 0 1px 2px -1px rgb(0 0 0 / 0.08);
+  --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.08), 0 2px 4px -2px rgb(0 0 0 / 0.05);
+}
+
+/* Dark mode is intentionally not implemented per design brief */
+
+@theme inline {
+  /* Surfaces */
+  --color-background:           var(--background);
+  --color-foreground:           var(--foreground);
+  --color-card:                 var(--card);
+  --color-card-foreground:      var(--card-foreground);
+  --color-popover:              var(--popover);
+  --color-popover-foreground:   var(--popover-foreground);
+  --color-surface:              var(--surface);
+
+  /* Brand */
+  --color-brand:                var(--brand);
+  --color-brand-hover:          var(--brand-hover);
+  --color-brand-light:          var(--brand-light);
+  --color-brand-foreground:     var(--brand-foreground);
+
+  /* shadcn compat */
+  --color-primary:              var(--primary);
+  --color-primary-foreground:   var(--primary-foreground);
+  --color-secondary:            var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted:                var(--muted);
+  --color-muted-foreground:     var(--muted-foreground);
+  --color-subtle-foreground:    var(--subtle-foreground);
+  --color-accent:               var(--accent);
+  --color-accent-foreground:    var(--accent-foreground);
+  --color-destructive:          var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border:               var(--border);
+  --color-border-strong:        var(--border-strong);
+  --color-input:                var(--input);
+  --color-input-background:     var(--input-background);
+  --color-switch-background:    var(--switch-background);
+  --color-ring:                 var(--ring);
+
+  /* Status — attendance */
+  --color-status-present:         var(--status-present);
+  --color-status-present-bg:      var(--status-present-bg);
+  --color-status-present-border:  var(--status-present-border);
+  --color-status-absent:          var(--status-absent);
+  --color-status-absent-bg:       var(--status-absent-bg);
+  --color-status-absent-border:   var(--status-absent-border);
+  --color-status-late:            var(--status-late);
+  --color-status-late-bg:         var(--status-late-bg);
+  --color-status-late-border:     var(--status-late-border);
+  --color-status-excused:         var(--status-excused);
+  --color-status-excused-bg:      var(--status-excused-bg);
+  --color-status-excused-border:  var(--status-excused-border);
+
+  /* Status — module */
+  --color-status-draft:           var(--status-draft);
+  --color-status-draft-bg:        var(--status-draft-bg);
+  --color-status-draft-border:    var(--status-draft-border);
+  --color-status-active:          var(--status-active);
+  --color-status-active-bg:       var(--status-active-bg);
+  --color-status-active-border:   var(--status-active-border);
+  --color-status-closed:          var(--status-closed);
+  --color-status-closed-bg:       var(--status-closed-bg);
+  --color-status-closed-border:   var(--status-closed-border);
+
+  /* Status — invitation */
+  --color-status-pending:         var(--status-pending);
+  --color-status-pending-bg:      var(--status-pending-bg);
+  --color-status-accepted:        var(--status-accepted);
+  --color-status-accepted-bg:     var(--status-accepted-bg);
+
+  /* Feedback */
+  --color-success:        var(--success);
+  --color-success-bg:     var(--success-bg);
+  --color-warning:        var(--warning);
+  --color-warning-bg:     var(--warning-bg);
+  --color-info:           var(--info);
+  --color-info-bg:        var(--info-bg);
+
+  /* Charts */
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+
+  /* Sidebar */
+  --color-sidebar:                    var(--sidebar);
+  --color-sidebar-foreground:         var(--sidebar-foreground);
+  --color-sidebar-primary:            var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent:             var(--sidebar-accent);
+  --color-sidebar-accent-foreground:  var(--sidebar-accent-foreground);
+  --color-sidebar-border:             var(--sidebar-border);
+  --color-sidebar-ring:               var(--sidebar-ring);
+
+  /* Radius — unified 6px */
+  --radius-sm: calc(var(--radius) - 2px);   /* 4px */
+  --radius-md: var(--radius);               /* 6px */
+  --radius-lg: calc(var(--radius) + 2px);   /* 8px */
+  --radius-xl: calc(var(--radius) + 6px);   /* 12px */
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+    font-family: var(--font-sans, ui-sans-serif, system-ui, sans-serif);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  html {
+    font-size: var(--font-size);
+  }
+
+  /* ─── Typography scale ───────────────────────────────────────
+     28 / 20 / 16 / 14 / 12 px — max 4 sizes, as per design brief
+  ──────────────────────────────────────────────────────────── */
+  h1 {
+    font-size: 1.75rem;   /* 28px */
+    font-weight: 600;
+    line-height: 1.35;
+    letter-spacing: -0.01em;
+    color: var(--foreground);
+  }
+
+  h2 {
+    font-size: 1.25rem;   /* 20px */
+    font-weight: 600;
+    line-height: 1.4;
+    letter-spacing: -0.005em;
+    color: var(--foreground);
+  }
+
+  h3 {
+    font-size: 1rem;      /* 16px */
+    font-weight: 600;
+    line-height: 1.5;
+    color: var(--foreground);
+  }
+
+  h4 {
+    font-size: 0.875rem;  /* 14px */
+    font-weight: 600;
+    line-height: 1.5;
+    color: var(--foreground);
+  }
+
+  p {
+    font-size: 0.875rem;  /* 14px — body default */
+    font-weight: 400;
+    line-height: 1.6;
+    color: var(--foreground);
+  }
+
+  label {
+    font-size: 0.875rem;  /* 14px */
+    font-weight: 500;
+    line-height: 1.5;
+  }
+
+  button {
+    font-size: 0.875rem;  /* 14px */
+    font-weight: 500;
+    line-height: 1.5;
+  }
+
+  input, textarea, select {
+    font-size: 0.875rem;  /* 14px */
+    font-weight: 400;
+    line-height: 1.5;
+  }
+}
+
+/* ─── Extended radius utilities (8 / 12 / 16 / 20 px) ─────────────────────── */
+/* Use alongside Tailwind's built-in rounded-* classes.                          */
+/* rounded-lg = 8px | rounded-xl = 12px | rounded-2xl = 16px | rounded-[20px]   */
+
+/* ─── Custom shadow utilities ────────────────────────────────────────────────  */
+@layer utilities {
+  .shadow-card {
+    box-shadow: 0 2px 8px 0 rgb(0 0 0 / 0.06), 0 1px 2px 0 rgb(0 0 0 / 0.04);
+  }
+  .shadow-card-hover {
+    box-shadow: 0 8px 24px 0 rgb(0 0 0 / 0.10), 0 2px 6px 0 rgb(0 0 0 / 0.06);
+  }
+  .shadow-popover {
+    box-shadow: 0 8px 30px 0 rgb(0 0 0 / 0.12), 0 2px 6px 0 rgb(0 0 0 / 0.06);
+  }
+  .shadow-modal {
+    box-shadow: 0 20px 60px 0 rgb(0 0 0 / 0.15), 0 4px 12px 0 rgb(0 0 0 / 0.08);
+  }
+}

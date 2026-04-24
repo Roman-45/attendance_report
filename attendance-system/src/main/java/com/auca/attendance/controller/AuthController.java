@@ -5,6 +5,7 @@ import com.auca.attendance.dto.response.ApiResponse;
 import com.auca.attendance.dto.response.AuthResponse;
 import com.auca.attendance.entity.User;
 import com.auca.attendance.service.AuthService;
+import com.auca.attendance.service.InvitationService;
 import com.auca.attendance.service.MfaService;
 import com.auca.attendance.service.PasswordResetService;
 import jakarta.validation.Valid;
@@ -24,6 +25,7 @@ public class AuthController {
     private final AuthService authService;
     private final PasswordResetService passwordResetService;
     private final MfaService mfaService;
+    private final InvitationService invitationService;
 
     /** Standard email + password login. Returns access token + refresh token. */
     @PostMapping("/login")
@@ -44,7 +46,7 @@ public class AuthController {
             return ResponseEntity.badRequest()
                     .body(ApiResponse.error("Missing Google credential"));
         }
-        return ResponseEntity.ok(ApiResponse.success(authService.googleLogin(credential), "Login successful"));
+        return ResponseEntity.ok(ApiResponse.success("Login successful", authService.googleLogin(credential)));
     }
 
     /** Self-service registration for STUDENT or INSTRUCTOR roles. Sends verification email. */
@@ -66,12 +68,17 @@ public class AuthController {
     @GetMapping("/me")
     public ResponseEntity<ApiResponse<AuthResponse>> me(@AuthenticationPrincipal User user) {
         String photoUrl = user.getProfilePhotoPath() != null ? "/api/v1/profile/photo" : null;
+        boolean needsModuleSelection = user.getRole() == com.auca.attendance.enums.Role.INSTRUCTOR
+                && user.getAssignedModule() == null;
+        Long assignedModuleId = user.getAssignedModule() != null ? user.getAssignedModule().getId() : null;
         AuthResponse response = AuthResponse.builder()
                 .userId(user.getId())
                 .name(user.getName())
                 .email(user.getEmail())
                 .role(user.getRole().name())
                 .photoUrl(photoUrl)
+                .moduleSelectionRequired(needsModuleSelection)
+                .assignedModuleId(assignedModuleId)
                 .build();
         return ResponseEntity.ok(ApiResponse.success(response));
     }
@@ -159,5 +166,32 @@ public class AuthController {
             @Valid @RequestBody RefreshTokenRequest request) {
         authService.logout(request);
         return ResponseEntity.ok(ApiResponse.success("Logged out successfully", null));
+    }
+
+    /**
+     * Validate an invitation token (pre-check before showing the set-password form).
+     * Returns the invited user's name and email so the frontend can display it.
+     */
+    @GetMapping("/invitation")
+    public ResponseEntity<ApiResponse<Map<String, String>>> validateInvitation(
+            @RequestParam String token) {
+        User user = invitationService.validateInvitationToken(token);
+        return ResponseEntity.ok(ApiResponse.success(Map.of(
+                "name", user.getName(),
+                "email", user.getEmail(),
+                "role", user.getRole().name()
+        )));
+    }
+
+    /**
+     * Accept an invitation: set password + activate account.
+     * Returns auth tokens so the user is logged in immediately.
+     */
+    @PostMapping("/accept-invitation")
+    public ResponseEntity<ApiResponse<AuthResponse>> acceptInvitation(
+            @Valid @RequestBody AcceptInvitationRequest request) {
+        return ResponseEntity.ok(ApiResponse.success(
+                "Account activated successfully",
+                invitationService.acceptInvitation(request)));
     }
 }
