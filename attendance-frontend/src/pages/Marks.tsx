@@ -38,12 +38,12 @@ export default function Marks() {
 
   const { data: columns = [], isLoading } = useQuery({
     queryKey: ['mark-columns', selectedModuleId],
-    queryFn: () => client.get(`/marks/module/${selectedModuleId}/columns`).then(r => r.data.data),
+    queryFn: () => client.get(`/modules/${selectedModuleId}/columns`).then(r => r.data.data),
     enabled: !!selectedModuleId,
   })
 
   const createColumnMutation = useMutation({
-    mutationFn: () => client.post(`/marks/module/${selectedModuleId}/columns`, columnForm),
+    mutationFn: () => client.post(`/modules/${selectedModuleId}/columns`, columnForm),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['mark-columns', selectedModuleId] })
       setColumnDialogOpen(false)
@@ -57,7 +57,7 @@ export default function Marks() {
 
   const saveEntriesMutation = useMutation({
     mutationFn: (data: { columnId: number; entries: Array<{ studentId: number; score: number }> }) =>
-      client.post(`/marks/columns/${data.columnId}/entries`, data.entries),
+      client.post(`/modules/${selectedModuleId}/marks`, data.entries, { params: { columnId: data.columnId } }),
     onSuccess: () => {
       setEntryDialogOpen(false)
       toast({ title: 'Marks saved' })
@@ -69,7 +69,7 @@ export default function Marks() {
   })
 
   const computeGradesMutation = useMutation({
-    mutationFn: () => client.post(`/grades/module/${selectedModuleId}/compute`),
+    mutationFn: () => client.post(`/modules/${selectedModuleId}/grades/compute`),
     onSuccess: () => toast({ title: 'Grades computed successfully' }),
     onError: (err: unknown) => {
       const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message || 'Failed'
