@@ -62,23 +62,23 @@ export default function Signup() {
   return (
     <div className="flex min-h-screen">
       {/* ── Left branding panel ── */}
-      <div className="hidden md:flex md:w-1/2 lg:w-[55%] flex-col justify-between p-10 bg-gradient-to-br from-[#0F172A] via-[#1E293B] to-[#4F46E5]/50 relative overflow-hidden">
-        <div className="absolute -top-24 -left-24 h-80 w-80 rounded-full bg-[#4F46E5]/20 blur-3xl pointer-events-none" />
-        <div className="absolute bottom-0 right-0 h-96 w-96 rounded-full bg-[#0284C7]/15 blur-3xl pointer-events-none" />
+      <div className="hidden md:flex md:w-1/2 lg:w-[55%] flex-col justify-between p-10 bg-brand relative overflow-hidden">
+        <div className="absolute -top-24 -left-24 h-80 w-80 rounded-full bg-white/5 blur-3xl pointer-events-none" />
+        <div className="absolute bottom-0 right-0 h-96 w-96 rounded-full bg-white/5 blur-3xl pointer-events-none" />
 
         <div className="flex items-center gap-3 relative z-10">
-          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-white/10 backdrop-blur">
-            <GraduationCap className="h-5 w-5 text-[#F1F5F9]" />
+          <div className="flex h-10 w-10 items-center justify-center rounded-md bg-white/10 backdrop-blur">
+            <GraduationCap className="h-5 w-5 text-brand-foreground" />
           </div>
-          <span className="text-[#F1F5F9] font-semibold text-lg tracking-tight">AUCA Attendance</span>
+          <span className="text-brand-foreground font-semibold text-lg tracking-tight">AUCA Attendance</span>
         </div>
 
         <div className="relative z-10">
-          <h2 className="text-4xl font-bold text-[#F1F5F9] leading-tight mb-4">
+          <h2 className="text-4xl font-semibold text-brand-foreground leading-tight mb-4">
             Join AUCA<br />
-            <span className="text-[#BAE6FD]">Start tracking today.</span>
+            <span className="text-white/70">Start tracking today.</span>
           </h2>
-          <p className="text-[#94A3B8] text-sm leading-relaxed mb-8 max-w-xs">
+          <p className="text-white/70 text-sm leading-relaxed mb-8 max-w-xs">
             Create your account to access attendance records, marks, and reports all in one place.
           </p>
           <div className="flex flex-col gap-3">
@@ -87,36 +87,36 @@ export default function Signup() {
               { icon: TrendingUp,    label: 'Track your academic progress' },
               { icon: Bell,          label: 'Get notified about absences' },
             ] as const).map(({ icon: Icon, label }) => (
-              <div key={label} className="flex items-center gap-3 rounded-full bg-white/[0.08] backdrop-blur px-4 py-2.5 w-fit">
-                <div className="h-7 w-7 rounded-full bg-[#4F46E5]/30 flex items-center justify-center shrink-0">
-                  <Icon className="h-3.5 w-3.5 text-[#BAE6FD]" />
+              <div key={label} className="flex items-center gap-3 rounded-md bg-white/10 backdrop-blur px-4 py-2.5 w-fit">
+                <div className="h-7 w-7 rounded-md bg-white/15 flex items-center justify-center shrink-0">
+                  <Icon className="h-3.5 w-3.5 text-brand-foreground" />
                 </div>
-                <span className="text-sm text-[#94A3B8]">{label}</span>
+                <span className="text-sm text-brand-foreground">{label}</span>
               </div>
             ))}
           </div>
         </div>
 
-        <p className="text-xs text-[#64748B] relative z-10">
+        <p className="text-xs text-white/60 relative z-10">
           © {new Date().getFullYear()} Adventist University of Central Africa
         </p>
       </div>
 
       {/* ── Right form panel ── */}
-      <div className="flex flex-1 flex-col items-center justify-center px-6 py-12 bg-[#F8FAFC] overflow-y-auto">
+      <div className="flex flex-1 flex-col items-center justify-center px-6 py-12 bg-background overflow-y-auto">
         {/* Mobile logo */}
         <div className="flex md:hidden items-center gap-2 mb-8">
-          <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#4F46E5] shadow-lg shadow-[#4F46E5]/30">
-            <GraduationCap className="h-4 w-4 text-[#F1F5F9]" />
+          <div className="flex h-9 w-9 items-center justify-center rounded-md bg-brand">
+            <GraduationCap className="h-4 w-4 text-brand-foreground" />
           </div>
-          <span className="font-bold text-lg text-[#0F172A]">AUCA Attendance</span>
+          <span className="font-semibold text-lg text-foreground">AUCA Attendance</span>
         </div>
 
         <div className="w-full max-w-sm animate-slide-up">
-          <Card className="rounded-xl border border-[#E2E8F0] bg-[#FFFFFF] shadow-[0_1px_3px_rgba(15,23,42,0.04),0_1px_2px_rgba(15,23,42,0.03)]">
+          <Card className="border-border bg-surface shadow-sm">
             <CardHeader className="pb-4">
-              <CardTitle className="text-lg text-[#0F172A]">Create your account</CardTitle>
-              <CardDescription className="text-[#64748B]">Fill in your details to get started</CardDescription>
+              <CardTitle>Create your account</CardTitle>
+              <CardDescription className="text-muted-foreground">Fill in your details to get started</CardDescription>
             </CardHeader>
             <CardContent>
               {/* Google Sign-Up — shown first as the quick option */}
@@ -131,14 +131,14 @@ export default function Signup() {
               </div>
 
               <div className="relative flex items-center gap-3 mb-4">
-                <div className="flex-1 border-t border-[#E2E8F0]" />
-                <span className="text-xs text-[#94A3B8]">or sign up with email</span>
-                <div className="flex-1 border-t border-[#E2E8F0]" />
+                <div className="flex-1 border-t border-border" />
+                <span className="text-xs text-subtle-foreground">or sign up with email</span>
+                <div className="flex-1 border-t border-border" />
               </div>
 
               <form onSubmit={handleSubmit} className="space-y-4">
                 <div className="space-y-1.5">
-                  <Label htmlFor="name" className="text-[#334155]">Full Name</Label>
+                  <Label htmlFor="name">Full Name</Label>
                   <Input
                     id="name"
                     placeholder="John Doe"
@@ -149,7 +149,7 @@ export default function Signup() {
                   />
                 </div>
                 <div className="space-y-1.5">
-                  <Label htmlFor="email" className="text-[#334155]">Email</Label>
+                  <Label htmlFor="email">Email</Label>
                   <Input
                     id="email"
                     type="email"
@@ -161,7 +161,7 @@ export default function Signup() {
                   />
                 </div>
                 <div className="space-y-1.5">
-                  <Label htmlFor="role" className="text-[#334155]">I am a…</Label>
+                  <Label htmlFor="role">I am a…</Label>
                   <Select value={role} onValueChange={(v) => setRole(v as 'STUDENT' | 'INSTRUCTOR')}>
                     <SelectTrigger id="role">
                       <SelectValue />
@@ -173,7 +173,7 @@ export default function Signup() {
                   </Select>
                 </div>
                 <div className="space-y-1.5">
-                  <Label htmlFor="password" className="text-[#334155]">Password</Label>
+                  <Label htmlFor="password">Password</Label>
                   <PasswordInput
                     id="password"
                     placeholder="Min. 8 characters"
@@ -185,7 +185,7 @@ export default function Signup() {
                   />
                 </div>
                 <div className="space-y-1.5">
-                  <Label htmlFor="confirm" className="text-[#334155]">Confirm Password</Label>
+                  <Label htmlFor="confirm">Confirm Password</Label>
                   <PasswordInput
                     id="confirm"
                     placeholder="Repeat your password"
@@ -197,7 +197,7 @@ export default function Signup() {
                 </div>
                 <Button
                   type="submit"
-                  className="w-full mt-2 bg-[#4F46E5] hover:bg-[#4338CA] text-[#F1F5F9]"
+                  className="w-full mt-2"
                   disabled={loading}
                 >
                   {loading ? (
@@ -212,11 +212,11 @@ export default function Signup() {
                   )}
                 </Button>
               </form>
-              <p className="mt-5 text-center text-sm text-[#64748B]">
+              <p className="mt-5 text-center text-sm text-muted-foreground">
                 Already have an account?{' '}
                 <Link
                   to="/login"
-                  className="font-medium text-[#4F46E5] hover:text-[#4338CA] hover:underline underline-offset-4 transition-colors"
+                  className="font-medium text-brand hover:text-brand-hover hover:underline underline-offset-4 transition-colors"
                 >
                   Sign in
                 </Link>
