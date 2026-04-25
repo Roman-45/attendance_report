@@ -36,12 +36,12 @@ export default function Attendance() {
 
   const { data: sessions = [], isLoading: sessionsLoading } = useQuery({
     queryKey: ['sessions', selectedModuleId],
-    queryFn: () => client.get(`/attendance/module/${selectedModuleId}/sessions`).then(r => r.data.data),
+    queryFn: () => client.get(`/modules/${selectedModuleId}/sessions`).then(r => r.data.data),
     enabled: !!selectedModuleId,
   })
 
   const createSessionMutation = useMutation({
-    mutationFn: () => client.post(`/attendance/module/${selectedModuleId}/sessions`, sessionForm),
+    mutationFn: () => client.post(`/modules/${selectedModuleId}/sessions`, sessionForm),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['sessions', selectedModuleId] })
       setCreateDialogOpen(false)
@@ -55,7 +55,7 @@ export default function Attendance() {
 
   const submitRecordsMutation = useMutation({
     mutationFn: (data: { sessionId: number; records: Array<{ studentId: number; status: string }> }) =>
-      client.post(`/attendance/sessions/${data.sessionId}/records`, data.records),
+      client.post(`/sessions/${data.sessionId}/records`, data.records),
     onSuccess: () => {
       setRecordDialogOpen(false)
       toast({ title: 'Attendance recorded' })

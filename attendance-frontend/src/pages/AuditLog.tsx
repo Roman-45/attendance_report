@@ -17,7 +17,7 @@ export default function AuditLog() {
 
   const { data, isLoading } = useQuery({
     queryKey: ['audit-log', page, search],
-    queryFn: () => client.get('/audit-logs', { params: { page, size: 20, search: search || undefined } }).then(r => r.data.data),
+    queryFn: () => client.get('/audit', { params: { page, size: 20, search: search || undefined } }).then(r => r.data.data),
   })
 
   const logs: AuditLogEntry[] = data?.content ?? data ?? []

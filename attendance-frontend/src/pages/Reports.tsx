@@ -128,7 +128,7 @@ export default function Reports() {
     const key = `${type}-${format}`
     setDownloading(key)
     try {
-      const response = await client.get(`/reports/module/${selectedModuleId}/${type}/${format}`, {
+      const response = await client.get(`/reports/modules/${selectedModuleId}/${type}/${format}`, {
         responseType: 'blob',
       })
       const ext = format === 'excel' ? 'xlsx' : 'pdf'
