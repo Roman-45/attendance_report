@@ -74,14 +74,14 @@ export interface MarkColumn {
   id: number
   moduleId: number
   name: string
-  markType: string
-  maxMark: number
+  type: string
+  maxScore: number
   weight: number
 }
 
 export interface MarkEntry {
   id: number
-  markColumnId: number
+  columnId: number
   studentId: number
   studentName: string
   score: number
