@@ -59,6 +59,14 @@ public class ClaimController {
         return ResponseEntity.ok(ApiResponse.success(claimService.getPendingClaims(pageable)));
     }
 
+    @GetMapping("/{claimId}")
+    @PreAuthorize("hasAnyRole('ADMIN','FACILITATOR','TEAM_LEADER','STUDENT')")
+    public ResponseEntity<ApiResponse<ClaimResponse>> getClaim(
+            @PathVariable Long claimId,
+            @AuthenticationPrincipal User currentUser) {
+        return ResponseEntity.ok(ApiResponse.success(claimService.getClaimById(claimId, currentUser)));
+    }
+
     @PutMapping("/{claimId}/resolve")
     @PreAuthorize("hasAnyRole('ADMIN','FACILITATOR')")
     public ResponseEntity<ApiResponse<ClaimResponse>> resolveClaim(

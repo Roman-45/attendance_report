@@ -6,6 +6,7 @@ import lombok.Builder;
 import lombok.Data;
 
 import java.time.OffsetDateTime;
+import java.util.List;
 
 @Data
 @Builder
@@ -23,4 +24,10 @@ public class ClaimResponse {
     private String resolvedByName;
     private OffsetDateTime resolvedAt;
     private OffsetDateTime createdAt;
+
+    /**
+     * Activity timeline derived from audit_log. Null when fetching via list
+     * endpoints; populated only when fetching a single claim via GET /claims/{id}.
+     */
+    private List<ClaimActivityResponse> activity;
 }
