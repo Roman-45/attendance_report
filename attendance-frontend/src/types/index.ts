@@ -64,10 +64,14 @@ export interface AttendanceSession {
 export interface AttendanceRecord {
   id: number
   sessionId: number
+  sessionDate?: string
   studentId: number
   studentName: string
+  studentCode?: string
   status: string
   consecutiveAbsentFlag: boolean
+  notes?: string | null
+  recordedAt?: string
 }
 
 export interface MarkColumn {
