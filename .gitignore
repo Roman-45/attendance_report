@@ -8,3 +8,9 @@ application-local.yml
 
 # Word documents (internship reports)
 *.docx
+
+# Frontend build artefacts and dependencies
+**/node_modules/
+**/dist/
+attendance-frontend/tsconfig.tsbuildinfo
+frontend-design-reference/package-lock.json

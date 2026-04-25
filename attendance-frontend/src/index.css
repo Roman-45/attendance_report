@@ -1,131 +1,206 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
 
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
+/* ─────────────────────────────────────────────────────────────────────
+   AUCA design tokens — ported from frontend-design-reference/theme.css.
+   Hex values are intentional: design language is "border-driven, one
+   accent colour" (AUCA navy). Per the design brief, dark mode is NOT
+   actively maintained — the legacy .dark block below stays for any
+   third-party shadcn components that branch on `dark:` until they're
+   either ported (M1+) or removed.
+   ───────────────────────────────────────────────────────────────────── */
+
 @layer base {
   :root {
-    /* Primary — #4F46E5 / #4338CA hover */
-    --primary: 243 76% 59%;
-    --primary-foreground: 0 0% 100%;
+    /* Base font size */
+    --font-size: 16px;
+    --font-sans: 'Inter', ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
 
-    /* Page — #F8FAFC */
-    --background: 210 40% 98%;
-    /* Text — #0F172A */
-    --foreground: 222 47% 11%;
+    /* ─── Brand (AUCA Navy — the one accent colour) ─── */
+    --brand:            #1B3A6B;
+    --brand-hover:      #15305a;
+    --brand-light:      #EEF2F9;
+    --brand-foreground: #ffffff;
 
-    /* Card — #FFFFFF */
-    --card: 0 0% 100%;
-    --card-foreground: 222 47% 11%;
+    /* ─── Surfaces ─── */
+    --background:      #F7F8FA;
+    --surface:         #ffffff;
+    --surface-raised:  #ffffff;
 
-    /* Popover */
-    --popover: 0 0% 100%;
-    --popover-foreground: 222 47% 11%;
+    /* ─── Borders ─── */
+    --border:          #E2E8F0;
+    --border-strong:   #CBD5E1;
 
-    /* Secondary — #F1F5F9 / #334155 */
-    --secondary: 210 40% 96%;
-    --secondary-foreground: 215 25% 27%;
+    /* ─── Text ─── */
+    --foreground:        #111827;
+    --muted-foreground:  #6B7280;
+    --subtle-foreground: #9CA3AF;
 
-    /* Muted — #F1F5F9 / #64748B */
-    --muted: 210 40% 96%;
-    --muted-foreground: 215 16% 47%;
+    /* ─── Semantic status — attendance ─── */
+    --status-present:        #16a34a;
+    --status-present-bg:     #f0fdf4;
+    --status-present-border: #bbf7d0;
+    --status-absent:         #dc2626;
+    --status-absent-bg:      #fef2f2;
+    --status-absent-border:  #fecaca;
+    --status-late:           #d97706;
+    --status-late-bg:        #fffbeb;
+    --status-late-border:    #fde68a;
+    --status-excused:        #2563eb;
+    --status-excused-bg:     #eff6ff;
+    --status-excused-border: #bfdbfe;
 
-    /* Accent — #F1F5F9 / #0F172A */
-    --accent: 210 40% 96%;
-    --accent-foreground: 222 47% 11%;
+    /* ─── Module status ─── */
+    --status-draft:          #6B7280;
+    --status-draft-bg:       #F3F4F6;
+    --status-draft-border:   #D1D5DB;
+    --status-active:         #16a34a;
+    --status-active-bg:      #f0fdf4;
+    --status-active-border:  #bbf7d0;
+    --status-closed:         #9CA3AF;
+    --status-closed-bg:      #F9FAFB;
+    --status-closed-border:  #E5E7EB;
 
-    /* Destructive — #DC2626 */
-    --destructive: 0 84% 51%;
-    --destructive-foreground: 0 0% 100%;
+    /* ─── Invitation status ─── */
+    --status-pending:    #d97706;
+    --status-pending-bg: #fffbeb;
+    --status-accepted:   #16a34a;
+    --status-accepted-bg:#f0fdf4;
 
-    /* Success — #059669 */
-    --success: 160 84% 30%;
-    --success-foreground: 0 0% 100%;
+    /* ─── Feedback ─── */
+    --success:               #16a34a;
+    --success-bg:            #f0fdf4;
+    --success-foreground:    #ffffff;
+    --warning:               #d97706;
+    --warning-bg:            #fffbeb;
+    --warning-foreground:    #ffffff;
+    --destructive:           #dc2626;
+    --destructive-bg:        #fef2f2;
+    --destructive-foreground:#ffffff;
+    --info:                  #2563eb;
+    --info-bg:               #eff6ff;
+    --info-foreground:       #ffffff;
 
-    /* Warning — #D97706 */
-    --warning: 38 92% 44%;
-    --warning-foreground: 0 0% 100%;
+    /* ─── shadcn/ui compat aliases ─── */
+    --card:                 var(--surface);
+    --card-foreground:      var(--foreground);
+    --popover:              var(--surface-raised);
+    --popover-foreground:   var(--foreground);
+    --primary:              var(--brand);
+    --primary-foreground:   var(--brand-foreground);
+    --secondary:            #EEF2F9;
+    --secondary-foreground: var(--brand);
+    --muted:                #F3F4F6;
+    --accent:               var(--brand-light);
+    --accent-foreground:    var(--brand);
+    --input:                transparent;
+    --input-background:     var(--surface);
+    --switch-background:    #CBD5E1;
+    --ring:                 var(--brand);
 
-    /* Info — #0284C7 */
-    --info: 200 98% 39%;
-    --info-foreground: 0 0% 100%;
+    /* ─── Sidebar tokens ─── */
+    --sidebar:                    var(--surface);
+    --sidebar-foreground:         var(--foreground);
+    --sidebar-primary:            var(--brand);
+    --sidebar-primary-foreground: var(--brand-foreground);
+    --sidebar-accent:             var(--brand-light);
+    --sidebar-accent-foreground:  var(--brand);
+    --sidebar-border:             var(--border);
+    --sidebar-ring:               var(--brand);
 
-    /* Border — #E2E8F0 */
-    --border: 214 32% 91%;
-    --input: 214 32% 91%;
-    --ring: 243 76% 59%;
+    /* ─── Charts ─── */
+    --chart-1: #1B3A6B;
+    --chart-2: #16a34a;
+    --chart-3: #d97706;
+    --chart-4: #2563eb;
+    --chart-5: #dc2626;
 
-    --radius: 0.625rem;
+    /* ─── Shape — unified 6px radius ─── */
+    --radius: 0.375rem;
+
+    /* ─── Shadows (minimal — border-driven) ─── */
+    --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+    --shadow:    0 1px 3px 0 rgb(0 0 0 / 0.08), 0 1px 2px -1px rgb(0 0 0 / 0.08);
+    --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.08), 0 2px 4px -2px rgb(0 0 0 / 0.05);
   }
 
+  /* Legacy dark-mode block — design brief says dark is not maintained.
+     Kept only so existing `dark:` utility classes don't render literal
+     `var()` strings during the transition. Will be removed in a later
+     phase once all dark: utilities are stripped from ported components. */
   .dark {
-    /* #0B1120 */
-    --background: 222 59% 9%;
-    /* #F1F5F9 */
-    --foreground: 210 40% 96%;
-
-    /* #111827 */
-    --card: 222 47% 11%;
-    --card-foreground: 210 40% 96%;
-
-    --popover: 222 47% 11%;
-    --popover-foreground: 210 40% 96%;
-
-    /* #4F46E5 */
-    --primary: 243 76% 59%;
-    --primary-foreground: 0 0% 100%;
-
-    /* #1E293B */
-    --secondary: 217 33% 17%;
-    --secondary-foreground: 214 32% 91%;
-
-    /* #1E293B / #94A3B8 */
-    --muted: 217 33% 17%;
-    --muted-foreground: 215 20% 65%;
-
-    --accent: 217 33% 17%;
-    --accent-foreground: 210 40% 96%;
-
-    --destructive: 0 84% 51%;
-    --destructive-foreground: 0 0% 100%;
-
-    --success: 160 84% 30%;
-    --success-foreground: 0 0% 100%;
-
-    --warning: 38 92% 44%;
-    --warning-foreground: 0 0% 100%;
-
-    --info: 200 98% 39%;
-    --info-foreground: 0 0% 100%;
-
-    /* #1E3A5F */
-    --border: 213 53% 24%;
-    --input: 213 53% 24%;
-    --ring: 243 76% 59%;
+    --background:           #0B1120;
+    --foreground:           #F1F5F9;
+    --surface:              #111827;
+    --surface-raised:       #111827;
+    --card:                 #111827;
+    --card-foreground:      #F1F5F9;
+    --popover:              #111827;
+    --popover-foreground:   #F1F5F9;
+    --secondary:            #1E293B;
+    --secondary-foreground: #E2E8F0;
+    --muted:                #1E293B;
+    --muted-foreground:     #94A3B8;
+    --accent:               #1E293B;
+    --accent-foreground:    #F1F5F9;
+    --border:               #1E3A5F;
+    --input:                #1E3A5F;
   }
 }
 
 @layer base {
   * {
-    @apply border-border;
+    border-color: var(--border);
   }
 
   html {
     scroll-behavior: smooth;
+    font-size: var(--font-size);
   }
 
   body {
-    @apply bg-background text-foreground;
-    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background-color: var(--background);
+    color: var(--foreground);
+    font-family: var(--font-sans);
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     text-rendering: optimizeLegibility;
   }
 
+  /* Typography scale — 28 / 20 / 16 / 14 / 12 (max 4 sizes per brief) */
+  h1 {
+    font-size: 1.75rem;
+    font-weight: 600;
+    line-height: 1.35;
+    letter-spacing: -0.01em;
+    color: var(--foreground);
+  }
+  h2 {
+    font-size: 1.25rem;
+    font-weight: 600;
+    line-height: 1.4;
+    letter-spacing: -0.005em;
+    color: var(--foreground);
+  }
+  h3 {
+    font-size: 1rem;
+    font-weight: 600;
+    line-height: 1.5;
+    color: var(--foreground);
+  }
+  h4 {
+    font-size: 0.875rem;
+    font-weight: 600;
+    line-height: 1.5;
+    color: var(--foreground);
+  }
+
   ::selection {
-    background-color: hsl(var(--primary) / 0.15);
-    color: hsl(var(--foreground));
+    background-color: var(--brand-light);
+    color: var(--brand);
   }
 
   ::-webkit-scrollbar {
@@ -136,11 +211,11 @@
     background: transparent;
   }
   ::-webkit-scrollbar-thumb {
-    background: hsl(var(--border));
+    background: var(--border);
     border-radius: 3px;
   }
   ::-webkit-scrollbar-thumb:hover {
-    background: hsl(var(--muted-foreground) / 0.45);
+    background: var(--border-strong);
   }
 
   :focus {
@@ -149,14 +224,26 @@
 }
 
 @layer utilities {
+  /* Custom shadow utilities matching the design reference */
+  .shadow-card {
+    box-shadow: 0 2px 8px 0 rgb(0 0 0 / 0.06), 0 1px 2px 0 rgb(0 0 0 / 0.04);
+  }
+  .shadow-card-hover {
+    box-shadow: 0 8px 24px 0 rgb(0 0 0 / 0.10), 0 2px 6px 0 rgb(0 0 0 / 0.06);
+  }
+  .shadow-popover {
+    box-shadow: 0 8px 30px 0 rgb(0 0 0 / 0.12), 0 2px 6px 0 rgb(0 0 0 / 0.06);
+  }
+  .shadow-modal {
+    box-shadow: 0 20px 60px 0 rgb(0 0 0 / 0.15), 0 4px 12px 0 rgb(0 0 0 / 0.08);
+  }
+
   .animate-fade-in {
     animation: fadeIn 0.3s ease-out both;
   }
-
   .animate-slide-up {
     animation: slideUp 0.35s cubic-bezier(0.16, 1, 0.3, 1) both;
   }
-
   .animate-scale-in {
     animation: scaleIn 0.2s cubic-bezier(0.16, 1, 0.3, 1) both;
   }
@@ -165,12 +252,10 @@
     from { opacity: 0; }
     to   { opacity: 1; }
   }
-
   @keyframes slideUp {
     from { opacity: 0; transform: translateY(8px); }
     to   { opacity: 1; transform: translateY(0); }
   }
-
   @keyframes scaleIn {
     from { opacity: 0; transform: scale(0.97); }
     to   { opacity: 1; transform: scale(1); }
