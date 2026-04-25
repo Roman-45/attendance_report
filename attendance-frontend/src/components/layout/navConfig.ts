@@ -14,6 +14,7 @@ import {
   Award,
   AlertCircle,
   Grid2X2,
+  CalendarDays,
   Crown,
   Shield,
   UserCog,
@@ -112,6 +113,7 @@ export const NAV_CONFIG: Record<Role, NavSection[]> = {
       items: [
         { label: "Attendance",    icon: ClipboardCheck, path: "/attendance" },
         { label: "Modules",       icon: BookOpen,       path: "/modules" },
+        { label: "Schedule",      icon: CalendarDays,   path: "/schedule" },
         { label: "Seating Chart", icon: Grid2X2,        path: "/seating" },
         { label: "Reports",       icon: BarChart2,      path: "/reports" },
       ],
@@ -130,13 +132,15 @@ export const NAV_CONFIG: Record<Role, NavSection[]> = {
       items: [
         { label: "Module Dashboard", icon: LayoutDashboard, path: "/dashboard" },
         { label: "My Modules",       icon: BookOpen,        path: "/modules" },
+        { label: "Schedule",         icon: CalendarDays,    path: "/schedule" },
       ],
     },
     {
       label: "Grading",
       items: [
-        { label: "Marks & Grades", icon: FileEdit, path: "/marks" },
-        { label: "Seating",        icon: Grid2X2,  path: "/seating" },
+        { label: "Marks Entry", icon: FileEdit, path: "/marks" },
+        { label: "Grades",      icon: Award,    path: "/grades" },
+        { label: "Seating",     icon: Grid2X2,  path: "/seating" },
       ],
     },
     {
@@ -203,6 +207,8 @@ const PAGE_TITLES: Record<string, string> = {
   "/modules":           "Modules",
   "/attendance":        "Attendance",
   "/marks":             "Marks & Grades",
+  "/grades":            "Grades",
+  "/schedule":          "Schedule",
   "/reports":           "Reports",
   "/notifications":     "Notifications",
   "/audit-log":         "Audit Log",
