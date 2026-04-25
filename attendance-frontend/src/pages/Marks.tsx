@@ -10,15 +10,14 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Badge } from '@/components/ui/badge'
 import { useToast } from '@/hooks/use-toast'
-import { Plus, PenLine, Calculator, Award, FileText, Target, BookCheck, FlaskConical } from 'lucide-react'
+import { Plus, PenLine, Calculator, Award, FileText, BookCheck, FlaskConical } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 const markTypeConfig: Record<string, { icon: typeof Award; color: string; bg: string }> = {
-  ASSIGNMENT: { icon: FileText,    color: 'text-[#0284C7]', bg: 'bg-[#F0F9FF]' },
-  QUIZ:       { icon: FlaskConical, color: 'text-[#7C3AED]', bg: 'bg-[#EEF2FF]' },
-  MIDTERM:    { icon: BookCheck,   color: 'text-[#D97706]', bg: 'bg-[#FFFBEB]' },
-  FINAL:      { icon: Award,       color: 'text-[#DC2626]', bg: 'bg-[#FEF2F2]' },
-  PROJECT:    { icon: Target,      color: 'text-[#059669]', bg: 'bg-[#ECFDF5]' },
+  MIDTERM: { icon: BookCheck,    color: 'text-[#D97706]', bg: 'bg-[#FFFBEB]' },
+  FINAL:   { icon: Award,        color: 'text-[#DC2626]', bg: 'bg-[#FEF2F2]' },
+  QUIZ:    { icon: FlaskConical, color: 'text-[#7C3AED]', bg: 'bg-[#EEF2FF]' },
+  CUSTOM:  { icon: FileText,     color: 'text-[#0284C7]', bg: 'bg-[#F0F9FF]' },
 }
 
 export default function Marks() {
@@ -26,7 +25,7 @@ export default function Marks() {
   const [columnDialogOpen, setColumnDialogOpen] = useState(false)
   const [entryDialogOpen, setEntryDialogOpen] = useState(false)
   const [selectedColumn, setSelectedColumn] = useState<MarkColumn | null>(null)
-  const [columnForm, setColumnForm] = useState({ name: '', markType: 'ASSIGNMENT', maxMark: 100, weight: 0 })
+  const [columnForm, setColumnForm] = useState({ name: '', type: 'MIDTERM', maxScore: 100, weight: 0 })
   const [entries, setEntries] = useState<Array<{ studentId: number; studentName: string; score: number }>>([])
   const queryClient = useQueryClient()
   const { toast } = useToast()
@@ -118,7 +117,7 @@ export default function Marks() {
               </Button>
               <Button
                 onClick={() => {
-                  setColumnForm({ name: '', markType: 'ASSIGNMENT', maxMark: 100, weight: 0 })
+                  setColumnForm({ name: '', type: 'MIDTERM', maxScore: 100, weight: 0 })
                   setColumnDialogOpen(true)
                 }}
                 className="shadow-sm bg-[#4F46E5] hover:bg-[#4338CA] text-white"
@@ -224,7 +223,7 @@ export default function Marks() {
                 </p>
                 <Button
                   onClick={() => {
-                    setColumnForm({ name: '', markType: 'ASSIGNMENT', maxMark: 100, weight: 0 })
+                    setColumnForm({ name: '', type: 'MIDTERM', maxScore: 100, weight: 0 })
                     setColumnDialogOpen(true)
                   }}
                   className="bg-[#4F46E5] hover:bg-[#4338CA] text-white"
@@ -238,7 +237,7 @@ export default function Marks() {
           {columns.length > 0 && (
             <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
               {columns.map((c: MarkColumn) => {
-                const type = markTypeConfig[c.markType] || markTypeConfig.ASSIGNMENT
+                const type = markTypeConfig[c.type] || markTypeConfig.CUSTOM
                 const TypeIcon = type.icon
                 return (
                   <Card
@@ -262,7 +261,7 @@ export default function Marks() {
                         {c.name}
                       </h3>
                       <p className="text-xs text-[#64748B] dark:text-[#94A3B8] mb-4">
-                        {c.markType} · Max: {c.maxMark} points
+                        {c.type} · Max: {c.maxScore} points
                       </p>
 
                       <Button
@@ -309,15 +308,15 @@ export default function Marks() {
             </div>
             <div className="space-y-2">
               <Label className="text-[#334155] dark:text-[#94A3B8]">Type</Label>
-              <div className="grid grid-cols-3 sm:grid-cols-5 gap-2">
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                 {Object.entries(markTypeConfig).map(([key, cfg]) => {
                   const BtnIcon = cfg.icon
-                  const isSelected = columnForm.markType === key
+                  const isSelected = columnForm.type === key
                   return (
                     <button
                       key={key}
                       type="button"
-                      onClick={() => setColumnForm(f => ({ ...f, markType: key }))}
+                      onClick={() => setColumnForm(f => ({ ...f, type: key }))}
                       className={cn(
                         'flex flex-col items-center gap-1 py-2.5 rounded-xl border-2 transition-all text-xs font-medium',
                         isSelected
@@ -334,11 +333,11 @@ export default function Marks() {
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label className="text-[#334155] dark:text-[#94A3B8]">Max Mark</Label>
+                <Label className="text-[#334155] dark:text-[#94A3B8]">Max Score</Label>
                 <Input
                   type="number"
-                  value={columnForm.maxMark}
-                  onChange={(e) => setColumnForm(f => ({ ...f, maxMark: parseInt(e.target.value) }))}
+                  value={columnForm.maxScore}
+                  onChange={(e) => setColumnForm(f => ({ ...f, maxScore: parseInt(e.target.value) }))}
                   required
                   className="border-[#E2E8F0] dark:border-[#1E3A5F] text-[#0F172A] dark:text-[#F1F5F9]"
                 />
@@ -380,7 +379,7 @@ export default function Marks() {
           </DialogHeader>
 
           <p className="text-xs text-[#64748B] dark:text-[#94A3B8]">
-            Max score: <span className="font-semibold text-[#334155] dark:text-[#F1F5F9]">{selectedColumn?.maxMark}</span> points
+            Max score: <span className="font-semibold text-[#334155] dark:text-[#F1F5F9]">{selectedColumn?.maxScore}</span> points
           </p>
 
           <div className="max-h-80 overflow-auto space-y-1 rounded-lg border border-[#E2E8F0] dark:border-[#1E3A5F] p-1">
@@ -400,7 +399,7 @@ export default function Marks() {
                 <Input
                   type="number"
                   min={0}
-                  max={selectedColumn?.maxMark}
+                  max={selectedColumn?.maxScore}
                   value={entry.score}
                   onChange={(e) =>
                     setEntries(prev =>
