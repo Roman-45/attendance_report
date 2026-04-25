@@ -24,8 +24,8 @@
         <mapstruct.version>1.5.5.Final</mapstruct.version>
         <jjwt.version>0.12.3</jjwt.version>
         <testcontainers.version>1.19.7</testcontainers.version>
-        <!-- Override Lombok to a version that supports JDK 24 -->
-        <lombok.version>1.18.36</lombok.version>
+        <!-- Override Lombok to a version that supports JDK 25 -->
+        <lombok.version>1.18.42</lombok.version>
     </properties>
 
     <dependencyManagement>
