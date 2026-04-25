@@ -79,6 +79,7 @@ public class AuthController {
                 .photoUrl(photoUrl)
                 .moduleSelectionRequired(needsModuleSelection)
                 .assignedModuleId(assignedModuleId)
+                .mfaEnabled(Boolean.TRUE.equals(user.getMfaEnabled()))
                 .build();
         return ResponseEntity.ok(ApiResponse.success(response));
     }
