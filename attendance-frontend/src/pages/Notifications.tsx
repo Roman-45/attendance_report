@@ -1,39 +1,92 @@
-import { useState } from 'react'
+// Notification Center — ported from frontend-design-reference/src/app/components/shared/NotificationCenter.tsx
+//
+// Wires the live backend:
+//   GET /notifications?page=&size=        paginated list
+//   PATCH /notifications/:id/read         mark one read
+//   PATCH /notifications/read-all         mark all read
+//   GET /notifications/stream             SSE → invalidate queries (via useNotificationStream)
+//
+// Notification types observed in the backend (CONSECUTIVE_ABSENCE, THRESHOLD_ALERT,
+// etc.) are mapped to the design-reference visual buckets (attendance / dns / marks
+// / claim / invite / system).
+import { useMemo, useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import {
+  ClipboardCheck,
+  AlertTriangle,
+  Users,
+  Bell,
+  CheckCheck,
+  MessageSquare,
+  Settings,
+  BarChart2,
+} from 'lucide-react'
+import { formatDistanceToNow, isToday, isYesterday, differenceInDays } from 'date-fns'
 import client from '@/api/client'
-import type { Notification } from '@/types'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
-import { Bell, Check, AlertTriangle, TrendingDown } from 'lucide-react'
-import { format, formatDistanceToNow } from 'date-fns'
-import { cn } from '@/lib/utils'
+import { useAuth } from '@/context/AuthContext'
+import { useNotificationStream } from '@/hooks/useNotificationStream'
+import type { Notification as ApiNotification } from '@/types'
 
-const TYPE_CONFIG: Record<string, { label: string; icon: React.ElementType; color: string; bg: string }> = {
-  CONSECUTIVE_ABSENCE: {
-    label: 'Consecutive Absence',
-    icon: AlertTriangle,
-    color: 'text-[#D97706] dark:text-[#D97706]',
-    bg: 'bg-[#FFFBEB] dark:bg-[#FFFBEB]/10',
-  },
-  THRESHOLD_ALERT: {
-    label: 'Threshold Alert',
-    icon: TrendingDown,
-    color: 'text-[#DC2626] dark:text-[#DC2626]',
-    bg: 'bg-[#FEF2F2] dark:bg-[#FEF2F2]/10',
-  },
+// ─── Visual buckets ───────────────────────────────────────────────────────
+type NType = 'attendance' | 'marks' | 'dns' | 'system' | 'claim' | 'invite'
+
+const TYPE_CONFIG: Record<
+  NType,
+  { icon: React.ElementType; color: string; bg: string; label: string; badge: 'success' | 'destructive' | 'warning' | 'info' | 'default' | 'secondary' }
+> = {
+  attendance: { icon: ClipboardCheck, color: 'text-status-present',  bg: 'bg-status-present-bg', label: 'Attendance', badge: 'success' },
+  marks:      { icon: BarChart2,      color: 'text-status-excused',  bg: 'bg-status-excused-bg', label: 'Marks',      badge: 'info' },
+  dns:        { icon: AlertTriangle,  color: 'text-status-absent',   bg: 'bg-status-absent-bg',  label: 'DNS Risk',   badge: 'destructive' },
+  system:     { icon: Settings,       color: 'text-muted-foreground', bg: 'bg-background',        label: 'System',     badge: 'secondary' },
+  claim:      { icon: MessageSquare,  color: 'text-status-late',     bg: 'bg-status-late-bg',    label: 'Claim',      badge: 'warning' },
+  invite:     { icon: Users,          color: 'text-brand',           bg: 'bg-brand-light',       label: 'Invite',     badge: 'default' },
 }
 
-export default function Notifications() {
-  const [page, setPage] = useState(0)
-  const queryClient = useQueryClient()
+function classifyType(raw: string | undefined): NType {
+  const t = (raw ?? '').toUpperCase()
+  if (t.includes('ABSEN') || t.includes('CONSECUTIVE')) return 'attendance'
+  if (t.includes('THRESHOLD') || t.includes('DNS') || t.includes('RISK')) return 'dns'
+  if (t.includes('MARK') || t.includes('GRADE')) return 'marks'
+  if (t.includes('CLAIM')) return 'claim'
+  if (t.includes('INVIT')) return 'invite'
+  return 'system'
+}
 
-  const { data, isLoading } = useQuery({
+function groupOf(date: Date): 'Today' | 'Yesterday' | 'This week' | 'Earlier' {
+  if (isToday(date)) return 'Today'
+  if (isYesterday(date)) return 'Yesterday'
+  if (differenceInDays(new Date(), date) < 7) return 'This week'
+  return 'Earlier'
+}
+
+function Sk({ className }: { className: string }) {
+  return <div className={`animate-pulse bg-border rounded-md ${className}`} />
+}
+
+type FilterKey = 'all' | NType
+
+export default function Notifications() {
+  const { user } = useAuth()
+  const queryClient = useQueryClient()
+  const [page, setPage] = useState(0)
+  const [filter, setFilter] = useState<FilterKey>('all')
+  const [unreadOnly, setUnreadOnly] = useState(false)
+
+  // SSE — reuse the existing hook so the bell + this list refresh in real time.
+  useNotificationStream(user?.role === 'ADMIN')
+
+  const { data, isLoading, error, refetch } = useQuery({
     queryKey: ['notifications', page],
-    queryFn: () => client.get('/notifications', { params: { page, size: 20 } }).then(r => r.data.data),
+    queryFn: () =>
+      client.get('/notifications', { params: { page, size: 20 } }).then((r) => r.data.data),
   })
 
-  const notifications: Notification[] = data?.content ?? []
+  const notifications: ApiNotification[] = useMemo(
+    () => (data?.content as ApiNotification[] | undefined) ?? [],
+    [data],
+  )
   const totalPages: number = data?.totalPages ?? 1
 
   const markReadMutation = useMutation({
@@ -52,155 +105,212 @@ export default function Notifications() {
     },
   })
 
-  const unreadCount = notifications.filter((n: Notification) => !n.isRead).length
+  const enriched = useMemo(
+    () =>
+      notifications.map((n) => {
+        const date = new Date(n.createdAt)
+        return {
+          ...n,
+          ntype: classifyType(n.type),
+          group: groupOf(date),
+          relative: formatDistanceToNow(date, { addSuffix: true }),
+        }
+      }),
+    [notifications],
+  )
 
-  return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight text-[#0F172A] dark:text-[#F1F5F9]">Notifications</h1>
-          <p className="text-sm text-[#64748B] dark:text-[#94A3B8] mt-1">
-            {unreadCount > 0
-              ? <span>{unreadCount} unread notification{unreadCount > 1 ? 's' : ''}</span>
-              : 'All caught up'}
-          </p>
+  const displayed = enriched.filter((n) => {
+    const matchesType = filter === 'all' || n.ntype === filter
+    const matchesUnread = !unreadOnly || !n.isRead
+    return matchesType && matchesUnread
+  })
+
+  const unreadCount = notifications.filter((n) => !n.isRead).length
+
+  const groups = displayed.reduce<Record<string, typeof displayed>>((acc, n) => {
+    ;(acc[n.group] ??= []).push(n)
+    return acc
+  }, {})
+  const groupOrder = ['Today', 'Yesterday', 'This week', 'Earlier']
+
+  if (isLoading) {
+    return (
+      <div className="p-6 space-y-4 max-w-3xl">
+        <div className="flex justify-between">
+          <Sk className="h-6 w-40" />
+          <Sk className="h-8 w-28" />
         </div>
-        {unreadCount > 0 && (
-          <Button
-            variant="outline"
-            onClick={() => markAllReadMutation.mutate()}
-            disabled={markAllReadMutation.isPending}
-            className="shadow-sm border-[#E2E8F0] dark:border-[#1E3A5F] text-[#334155] dark:text-[#94A3B8] hover:bg-[#F1F5F9] dark:hover:bg-[#1E293B]"
-          >
-            <Check className="h-4 w-4 mr-2" /> Mark All Read
-          </Button>
-        )}
-      </div>
-
-      {/* Unread count badge bar */}
-      {unreadCount > 0 && (
-        <div className="flex items-center gap-3 px-4 py-3 rounded-xl bg-[#EEF2FF] dark:bg-[#4F46E5]/10 border border-[#4F46E5]/20 dark:border-[#4F46E5]/20">
-          <div className="w-9 h-9 rounded-lg bg-[#4F46E5] flex items-center justify-center">
-            <Bell className="h-4 w-4 text-[#FFFFFF]" />
-          </div>
-          <div>
-            <p className="text-sm font-semibold text-[#0F172A] dark:text-[#F1F5F9]">{unreadCount} new alert{unreadCount > 1 ? 's' : ''}</p>
-            <p className="text-xs text-[#64748B] dark:text-[#94A3B8]">Action may be required for some items</p>
-          </div>
-        </div>
-      )}
-
-      {/* Loading */}
-      {isLoading && (
-        <div className="space-y-3">
-          {Array.from({ length: 4 }).map((_, i) => (
-            <Card key={i} className="animate-pulse border-[#E2E8F0] dark:border-[#1E3A5F]">
-              <CardContent className="p-4 flex gap-4">
-                <div className="w-10 h-10 rounded-lg bg-[#F1F5F9] dark:bg-[#1E293B]" />
-                <div className="flex-1 space-y-2">
-                  <div className="h-4 w-48 bg-[#F1F5F9] dark:bg-[#1E293B] rounded" />
-                  <div className="h-3 w-full bg-[#F1F5F9] dark:bg-[#1E293B] rounded" />
-                </div>
-              </CardContent>
-            </Card>
+        <div className="flex gap-2">
+          {[0, 1, 2, 3, 4].map((i) => (
+            <Sk key={i} className="h-7 w-20 rounded-md" />
           ))}
         </div>
-      )}
-
-      {/* Empty */}
-      {!isLoading && notifications.length === 0 && (
-        <Card className="border-dashed border-[#E2E8F0] dark:border-[#1E3A5F] bg-[#FFFFFF] dark:bg-[#111827]">
-          <CardContent className="py-16 text-center">
-            <div className="w-16 h-16 rounded-2xl bg-[#F1F5F9] dark:bg-[#1E293B] flex items-center justify-center mx-auto mb-4">
-              <Bell className="h-8 w-8 text-[#94A3B8]" />
+        <div className="bg-white rounded-xl border border-border overflow-hidden">
+          {[0, 1, 2, 3, 4, 5].map((i) => (
+            <div key={i} className="flex gap-3 px-4 py-4 border-b border-border">
+              <Sk className="w-9 h-9 rounded-xl flex-shrink-0" />
+              <div className="flex-1 space-y-2">
+                <Sk className="h-4 w-48" />
+                <Sk className="h-3 w-full max-w-xs" />
+                <Sk className="h-3 w-20" />
+              </div>
             </div>
-            <h3 className="text-lg font-semibold mb-1 text-[#0F172A] dark:text-[#F1F5F9]">No notifications yet</h3>
-            <p className="text-sm text-[#64748B] dark:text-[#94A3B8]">Absence alerts will appear here automatically</p>
-          </CardContent>
-        </Card>
-      )}
+          ))}
+        </div>
+      </div>
+    )
+  }
 
-      {/* Notification timeline */}
-      {notifications.length > 0 && (
-        <div className="relative">
-          {/* Timeline line */}
-          <div className="absolute left-[23px] top-0 bottom-0 w-px bg-[#E2E8F0] dark:bg-[#1E3A5F]" />
+  if (error) {
+    return (
+      <div className="p-6 max-w-3xl">
+        <div className="rounded-xl border border-status-absent-border bg-status-absent-bg p-6 text-center">
+          <p className="text-sm font-semibold text-status-absent">Could not load notifications.</p>
+          <button
+            onClick={() => refetch()}
+            className="mt-3 h-8 px-3 text-[12px] font-medium rounded-md border border-border bg-white hover:bg-background"
+          >
+            Retry
+          </button>
+        </div>
+      </div>
+    )
+  }
 
-          <div className="space-y-3">
-            {notifications.map((n: Notification) => {
-              const config = TYPE_CONFIG[n.type] ?? {
-                label: n.type,
-                icon: Bell,
-                color: 'text-[#64748B] dark:text-[#94A3B8]',
-                bg: 'bg-[#F1F5F9] dark:bg-[#1E293B]',
-              }
-              const Icon = config.icon
+  return (
+    <div className="p-6 space-y-5 max-w-3xl">
+      {/* Header */}
+      <div className="flex items-start justify-between gap-4 flex-wrap">
+        <div>
+          <div className="flex items-center gap-2.5">
+            <h1 className="text-2xl font-bold text-foreground">Notifications</h1>
+            {unreadCount > 0 && <Badge variant="destructive">{unreadCount} unread</Badge>}
+          </div>
+          <p className="text-muted-foreground mt-0.5 text-sm">
+            Stay updated on attendance, marks, and system events.
+          </p>
+        </div>
+        <div className="flex items-center gap-2">
+          <label className="flex items-center gap-1.5 text-[12px] text-muted-foreground cursor-pointer">
+            <input
+              type="checkbox"
+              checked={unreadOnly}
+              onChange={(e) => setUnreadOnly(e.target.checked)}
+              className="accent-brand w-3.5 h-3.5"
+            />
+            Unread only
+          </label>
+          {unreadCount > 0 && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => markAllReadMutation.mutate()}
+              disabled={markAllReadMutation.isPending}
+            >
+              <CheckCheck className="h-3.5 w-3.5 mr-1.5" />
+              Mark all read
+            </Button>
+          )}
+        </div>
+      </div>
 
-              return (
-                <div key={n.id} className="relative flex gap-4 pl-1">
-                  {/* Timeline dot */}
-                  <div className="relative z-10 shrink-0">
-                    <div className={cn(
-                      "w-11 h-11 rounded-xl flex items-center justify-center transition-all",
-                      n.isRead ? "bg-[#F1F5F9] dark:bg-[#1E293B]" : config.bg,
-                    )}>
-                      <Icon className={cn("h-5 w-5", n.isRead ? "text-[#94A3B8]" : config.color)} />
-                    </div>
-                  </div>
+      {/* Type filters */}
+      <div className="flex items-center gap-1.5 flex-wrap">
+        {(['all', ...(Object.keys(TYPE_CONFIG) as NType[])] as FilterKey[]).map((f) => {
+          const cfg = f === 'all' ? null : TYPE_CONFIG[f as NType]
+          const Icon = cfg?.icon
+          const count = f === 'all' ? notifications.length : enriched.filter((n) => n.ntype === f).length
+          const active = filter === f
+          return (
+            <button
+              key={f}
+              onClick={() => setFilter(f)}
+              className={`flex items-center gap-1.5 h-7 px-2.5 text-[12px] font-medium rounded-md border transition-colors ${
+                active
+                  ? 'bg-brand text-white border-brand'
+                  : 'border-border text-muted-foreground hover:bg-background'
+              }`}
+            >
+              {Icon && <Icon size={11} strokeWidth={2} />}
+              <span className="capitalize">{f === 'all' ? 'All' : cfg?.label}</span>
+              <span className={`text-[10px] ${active ? 'opacity-70' : 'opacity-60'}`}>{count}</span>
+            </button>
+          )
+        })}
+      </div>
 
-                  {/* Content card */}
-                  <Card className={cn(
-                    "flex-1 transition-all border-[#E2E8F0] dark:border-[#1E3A5F] bg-[#FFFFFF] dark:bg-[#111827]",
-                    n.isRead ? "opacity-60" : "shadow-sm border-[#4F46E5]/20",
-                  )}>
-                    <CardContent className="p-4">
-                      <div className="flex items-start justify-between gap-2">
+      {/* Notifications grouped */}
+      {displayed.length === 0 ? (
+        <div className="flex flex-col items-center justify-center py-20 bg-white rounded-xl border border-border text-center">
+          <div className="w-12 h-12 rounded-xl bg-brand-light flex items-center justify-center mb-4">
+            <Bell size={20} strokeWidth={1.5} className="text-brand" />
+          </div>
+          <p className="text-[14px] font-semibold text-foreground mb-1">All caught up!</p>
+          <p className="text-[13px] text-muted-foreground">
+            {notifications.length === 0
+              ? 'No notifications yet.'
+              : 'No notifications match the current filter.'}
+          </p>
+        </div>
+      ) : (
+        <div className="space-y-5">
+          {groupOrder
+            .filter((g) => groups[g]?.length)
+            .map((g) => (
+              <div key={g}>
+                <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground mb-2 px-1">
+                  {g}
+                </p>
+                <div className="bg-white rounded-xl border border-border shadow-card overflow-hidden divide-y divide-border">
+                  {groups[g].map((n) => {
+                    const cfg = TYPE_CONFIG[n.ntype]
+                    const Icon = cfg.icon
+                    return (
+                      <div
+                        key={n.id}
+                        className={`flex gap-3 px-4 py-3.5 hover:bg-background transition-colors cursor-pointer group ${
+                          !n.isRead ? 'bg-brand-light/20' : ''
+                        }`}
+                        onClick={() => {
+                          if (!n.isRead) markReadMutation.mutate(n.id)
+                        }}
+                      >
+                        <div
+                          className={`flex-shrink-0 w-9 h-9 rounded-xl flex items-center justify-center ${cfg.bg}`}
+                        >
+                          <Icon size={15} strokeWidth={2} className={cfg.color} />
+                        </div>
                         <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2 flex-wrap mb-1">
-                            <p className="text-sm font-semibold text-[#0F172A] dark:text-[#F1F5F9]">{n.title ?? config.label}</p>
-                            {!n.isRead && (
-                              <span className="w-2 h-2 rounded-full bg-[#4F46E5] animate-pulse" />
-                            )}
-                          </div>
-                          <p className="text-sm text-[#334155] dark:text-[#94A3B8] leading-relaxed">{n.message}</p>
-                          <div className="flex items-center gap-2 mt-2 flex-wrap">
-                            <Badge
-                              variant="outline"
-                              className={cn(
-                                "text-[10px] border-[#E2E8F0] dark:border-[#1E3A5F]",
-                                !n.isRead && config.color
-                              )}
+                          <div className="flex items-start justify-between gap-2">
+                            <p
+                              className={`text-[13px] ${
+                                !n.isRead ? 'font-semibold text-foreground' : 'font-medium text-foreground'
+                              }`}
                             >
-                              {config.label}
-                            </Badge>
-                            <span className="text-[11px] text-[#64748B] dark:text-[#94A3B8]">
-                              {formatDistanceToNow(new Date(n.createdAt), { addSuffix: true })}
-                            </span>
-                            <span className="text-[10px] text-[#94A3B8]">
-                              {format(new Date(n.createdAt), 'MMM d, HH:mm')}
-                            </span>
+                              {n.title ?? cfg.label}
+                            </p>
+                            <div className="flex items-center gap-2 flex-shrink-0">
+                              <span className="text-[11px] text-muted-foreground whitespace-nowrap">
+                                {n.relative}
+                              </span>
+                              {!n.isRead && (
+                                <div className="w-2 h-2 rounded-full bg-brand flex-shrink-0" />
+                              )}
+                            </div>
+                          </div>
+                          <p className="text-[12px] text-muted-foreground mt-0.5 line-clamp-2">
+                            {n.message}
+                          </p>
+                          <div className="mt-1.5">
+                            <Badge variant={cfg.badge}>{cfg.label}</Badge>
                           </div>
                         </div>
-
-                        {!n.isRead && (
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="text-xs h-7 shrink-0 text-[#4F46E5] hover:text-[#4338CA] hover:bg-[#EEF2FF] dark:hover:bg-[#4F46E5]/10"
-                            onClick={() => markReadMutation.mutate(n.id)}
-                            disabled={markReadMutation.isPending}
-                          >
-                            <Check className="h-3 w-3 mr-1" /> Read
-                          </Button>
-                        )}
                       </div>
-                    </CardContent>
-                  </Card>
+                    )
+                  })}
                 </div>
-              )
-            })}
-          </div>
+              </div>
+            ))}
         </div>
       )}
 
@@ -210,18 +320,18 @@ export default function Notifications() {
           <Button
             variant="outline"
             size="sm"
-            onClick={() => setPage(p => Math.max(0, p - 1))}
+            onClick={() => setPage((p) => Math.max(0, p - 1))}
             disabled={page === 0}
           >
             Previous
           </Button>
-          <span className="text-sm text-[#64748B] dark:text-[#94A3B8]">
+          <span className="text-sm text-muted-foreground">
             Page {page + 1} of {totalPages}
           </span>
           <Button
             variant="outline"
             size="sm"
-            onClick={() => setPage(p => p + 1)}
+            onClick={() => setPage((p) => p + 1)}
             disabled={page >= totalPages - 1}
           >
             Next

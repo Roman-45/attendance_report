@@ -14,6 +14,8 @@ import Attendance from '@/pages/Attendance'
 import Marks from '@/pages/Marks'
 import Reports from '@/pages/Reports'
 import Notifications from '@/pages/Notifications'
+import Schedule from '@/pages/Schedule'
+import Grades from '@/pages/Grades'
 import AuditLog from '@/pages/AuditLog'
 import StudentPortal from '@/pages/StudentPortal'
 import Profile from '@/pages/Profile'
@@ -64,6 +66,8 @@ export default function App() {
               <Route path="/modules" element={<Modules />} />
               <Route path="/attendance" element={<Attendance />} />
               <Route path="/marks" element={<Marks />} />
+              <Route path="/grades" element={<Grades />} />
+              <Route path="/schedule" element={<Schedule />} />
               <Route path="/reports" element={<Reports />} />
               <Route path="/notifications" element={<Notifications />} />
               <Route path="/audit-log" element={<AuditLog />} />
