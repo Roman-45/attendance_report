@@ -2,6 +2,8 @@ package com.auca.attendance.service;
 
 import com.auca.attendance.dto.request.ClaimRequest;
 import com.auca.attendance.dto.request.ClaimResolutionRequest;
+import com.auca.attendance.dto.response.AuditLogResponse;
+import com.auca.attendance.dto.response.ClaimActivityResponse;
 import com.auca.attendance.dto.response.ClaimResponse;
 import com.auca.attendance.entity.Claim;
 import com.auca.attendance.entity.Module;
@@ -19,6 +21,7 @@ import com.auca.attendance.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -36,6 +39,7 @@ public class ClaimService {
     private final UserRepository userRepo;
     private final NotificationRepository notificationRepo;
     private final SseEmitterService sseEmitterService;
+    private final AuditService auditService;
 
     @Transactional
     public ClaimResponse submitClaim(ClaimRequest request, User currentUser) {
@@ -55,6 +59,10 @@ public class ClaimService {
                 .build();
 
         claim = claimRepo.save(claim);
+
+        auditService.log(currentUser, "CREATE", "Claim", claim.getId(),
+                String.format("Claim raised: %s for %s", request.getClaimType(), module.getName()),
+                null);
 
         // Notify admins
         String title = "New " + request.getClaimType() + " Claim";
@@ -100,6 +108,39 @@ public class ClaimService {
                 .map(this::toResponse);
     }
 
+    /**
+     * Single-claim fetch with the activity timeline (derived from audit_log) populated.
+     * STUDENT may only access their own claims; ADMIN/FACILITATOR/TEAM_LEADER may access any.
+     */
+    @Transactional(readOnly = true)
+    public ClaimResponse getClaimById(Long claimId, User currentUser) {
+        Claim claim = claimRepo.findById(claimId)
+                .orElseThrow(() -> new ResourceNotFoundException("Claim not found"));
+
+        if (currentUser.getRole() == Role.STUDENT) {
+            Student student = studentRepo.findByAccountId(currentUser.getId())
+                    .orElseThrow(() -> new ResourceNotFoundException("No student profile linked to this account"));
+            if (!claim.getStudent().getId().equals(student.getId())) {
+                throw new AccessDeniedException("You may only view your own claims");
+            }
+        }
+
+        ClaimResponse response = toResponse(claim);
+        List<AuditLogResponse> logs = auditService.findByEntity("Claim", claim.getId());
+        response.setActivity(logs.stream().map(this::toActivity).toList());
+        return response;
+    }
+
+    private ClaimActivityResponse toActivity(AuditLogResponse log) {
+        return ClaimActivityResponse.builder()
+                .id(log.getId())
+                .action(log.getAction())
+                .actorEmail(log.getUserEmail())
+                .details(log.getDetails())
+                .at(log.getCreatedAt())
+                .build();
+    }
+
     @Transactional(readOnly = true)
     public Page<ClaimResponse> getPendingClaims(Pageable pageable) {
         return claimRepo.findByStatusOrderByCreatedAtDesc(ClaimStatus.PENDING, pageable)
@@ -120,6 +161,12 @@ public class ClaimService {
         claim.setResolvedBy(currentUser);
         claim.setResolvedAt(OffsetDateTime.now());
         claim = claimRepo.save(claim);
+
+        String auditDetails = String.format("Claim %s%s",
+                request.getStatus().name().toLowerCase(),
+                request.getResolutionNote() != null && !request.getResolutionNote().isBlank()
+                        ? ": " + request.getResolutionNote() : "");
+        auditService.log(currentUser, "UPDATE", "Claim", claim.getId(), auditDetails, null);
 
         // Notify the student
         User studentUser = claim.getStudent().getAccount();

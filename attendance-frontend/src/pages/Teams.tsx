@@ -11,7 +11,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Badge } from '@/components/ui/badge'
 import { useToast } from '@/hooks/use-toast'
-import { Plus, Users2, Trash2, Crown, UserPlus, Shield, MoreVertical, Mail, Loader2 } from 'lucide-react'
+import { Plus, Users2, Trash2, Crown, UserPlus, Shield, MoreVertical, Mail, Loader2, Pencil } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 interface EnrolledStudent {
@@ -23,10 +23,12 @@ interface EnrolledStudent {
 export default function Teams() {
   const [selectedModuleId, setSelectedModuleId] = useState<string>('')
   const [createOpen, setCreateOpen] = useState(false)
+  const [editOpen, setEditOpen] = useState(false)
   const [membersOpen, setMembersOpen] = useState(false)
   const [inviteOpen, setInviteOpen] = useState(false)
   const [selectedTeam, setSelectedTeam] = useState<Team | null>(null)
   const [teamForm, setTeamForm] = useState({ name: '', leaderStudentId: '' })
+  const [editForm, setEditForm] = useState({ name: '', leaderStudentId: '' })
   const [inviteForm, setInviteForm] = useState({ name: '', email: '', registrationNumber: '', teamId: '' })
   const [addStudentIds, setAddStudentIds] = useState<string[]>([])
   const queryClient = useQueryClient()
@@ -64,6 +66,22 @@ export default function Teams() {
       queryClient.invalidateQueries({ queryKey: ['teams', selectedModuleId] })
       setCreateOpen(false)
       toast({ title: 'Team created' })
+    },
+    onError: (err: unknown) => {
+      const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message || 'Failed'
+      toast({ variant: 'destructive', title: 'Error', description: msg })
+    },
+  })
+
+  const updateMutation = useMutation({
+    mutationFn: () => client.put(`/modules/${selectedModuleId}/teams/${selectedTeam!.id}`, {
+      name: editForm.name,
+      leaderStudentId: editForm.leaderStudentId ? Number(editForm.leaderStudentId) : null,
+    }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['teams', selectedModuleId] })
+      setEditOpen(false)
+      toast({ title: 'Team updated' })
     },
     onError: (err: unknown) => {
       const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message || 'Failed'
@@ -290,7 +308,23 @@ export default function Teams() {
                     <div className="flex items-center gap-1">
                       <Button
                         variant="ghost" size="sm"
+                        className="h-8 w-8 p-0 opacity-0 group-hover:opacity-100 transition-opacity text-[#334155] dark:text-[#94A3B8] hover:bg-[#F1F5F9] dark:hover:bg-[#1E293B]"
+                        title="Edit team"
+                        onClick={() => {
+                          setSelectedTeam(t)
+                          setEditForm({
+                            name: t.name,
+                            leaderStudentId: t.leaderStudentId ? String(t.leaderStudentId) : '',
+                          })
+                          setEditOpen(true)
+                        }}
+                      >
+                        <Pencil className="h-3.5 w-3.5" />
+                      </Button>
+                      <Button
+                        variant="ghost" size="sm"
                         className="h-8 w-8 p-0 opacity-0 group-hover:opacity-100 transition-opacity text-[#DC2626] hover:text-[#DC2626] hover:bg-[#FEF2F2]"
+                        title="Delete team"
                         onClick={() => deleteMutation.mutate(t.id)}
                       >
                         <Trash2 className="h-3.5 w-3.5" />
@@ -492,6 +526,54 @@ export default function Teams() {
         </DialogContent>
       </Dialog>
 
+      {/* Edit Team Dialog */}
+      <Dialog open={editOpen} onOpenChange={setEditOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-[#0F172A] dark:text-[#F1F5F9]">
+              <div className="w-8 h-8 rounded-lg bg-[#EEF2FF] dark:bg-[#1E3A5F]/30 flex items-center justify-center">
+                <Pencil className="h-4 w-4 text-[#4F46E5]" />
+              </div>
+              Edit Team
+            </DialogTitle>
+          </DialogHeader>
+          <form onSubmit={(e) => { e.preventDefault(); updateMutation.mutate() }} className="space-y-4">
+            <div className="space-y-2">
+              <Label className="text-[#334155] dark:text-[#F1F5F9]">Team Name</Label>
+              <Input
+                value={editForm.name}
+                onChange={(e) => setEditForm(f => ({ ...f, name: e.target.value }))}
+                required
+                className="border-[#E2E8F0] dark:border-[#1E3A5F]"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label className="text-[#334155] dark:text-[#F1F5F9]">Team Leader (optional)</Label>
+              <Select
+                value={editForm.leaderStudentId}
+                onValueChange={(v) => setEditForm(f => ({ ...f, leaderStudentId: v }))}
+              >
+                <SelectTrigger className="border-[#E2E8F0] dark:border-[#1E3A5F]">
+                  <SelectValue placeholder="Select a leader" />
+                </SelectTrigger>
+                <SelectContent>
+                  {enrolledStudents.map((s) => (
+                    <SelectItem key={s.studentId} value={String(s.studentId)}>
+                      {s.studentName} ({s.studentStudentId})
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <DialogFooter>
+              <Button type="submit" disabled={updateMutation.isPending} className="bg-[#4F46E5] hover:bg-[#4338CA] text-white">
+                {updateMutation.isPending ? 'Saving...' : 'Save changes'}
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
+
       {/* Team Members Dialog */}
       <Dialog open={membersOpen} onOpenChange={setMembersOpen}>
         <DialogContent className="max-w-lg">
@@ -540,13 +622,14 @@ export default function Teams() {
                 <TableRow className="border-[#E2E8F0] dark:border-[#1E3A5F]">
                   <TableHead className="text-[#64748B] dark:text-[#94A3B8]">Student</TableHead>
                   <TableHead className="text-[#64748B] dark:text-[#94A3B8]">Reg. No.</TableHead>
+                  <TableHead className="text-[#64748B] dark:text-[#94A3B8]" title="Per-member attendance % is not yet exposed by the API (TODO).">Attend %</TableHead>
                   <TableHead className="w-16" />
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {members.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={3} className="text-center py-8 text-[#64748B] dark:text-[#94A3B8]">
+                    <TableCell colSpan={4} className="text-center py-8 text-[#64748B] dark:text-[#94A3B8]">
                       <UserPlus className="h-6 w-6 mx-auto mb-2 opacity-30" />
                       No members yet — add students above
                     </TableCell>
@@ -577,6 +660,7 @@ export default function Teams() {
                         </div>
                       </TableCell>
                       <TableCell className="text-sm text-[#64748B] dark:text-[#94A3B8]">{m.registrationNumber}</TableCell>
+                      <TableCell className="text-sm text-[#94A3B8]" title="Not yet exposed by the API">—</TableCell>
                       <TableCell>
                         <Button
                           variant="ghost" size="sm"
