@@ -182,16 +182,20 @@ class StudentPortalApiTest extends BaseIntegrationTest {
     // ─── Attendance ──────────────────────────────────────────────────────────
 
     @Test
-    @DisplayName("GET /me/attendance returns attendance records for the student")
+    @DisplayName("GET /me/attendance returns paginated attendance records for the student")
     void getMyAttendance_ShouldReturnRecords() {
         ResponseEntity<Map> resp = restTemplate.exchange(
                 "/api/v1/me/attendance", HttpMethod.GET, withToken(studentToken), Map.class);
 
         assertThat(resp.getStatusCode()).isEqualTo(HttpStatus.OK);
         @SuppressWarnings("unchecked")
-        List<Map<String, Object>> data = (List<Map<String, Object>>) resp.getBody().get("data");
-        assertThat(data).isNotEmpty();
-        assertThat(data.get(0).get("status")).isEqualTo("PRESENT");
+        Map<String, Object> data = (Map<String, Object>) resp.getBody().get("data");
+        @SuppressWarnings("unchecked")
+        List<Map<String, Object>> content = (List<Map<String, Object>>) data.get("content");
+        assertThat(content).isNotEmpty();
+        assertThat(content.get(0).get("status")).isEqualTo("PRESENT");
+        assertThat(data).containsKey("totalElements");
+        assertThat(data).containsKey("totalPages");
     }
 
     @Test

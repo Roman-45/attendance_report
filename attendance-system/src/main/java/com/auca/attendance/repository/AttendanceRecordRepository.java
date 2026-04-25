@@ -1,6 +1,8 @@
 package com.auca.attendance.repository;
 
 import com.auca.attendance.entity.AttendanceRecord;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -11,6 +13,7 @@ import java.util.Optional;
 public interface AttendanceRecordRepository extends JpaRepository<AttendanceRecord, Long> {
     List<AttendanceRecord> findBySessionId(Long sessionId);
     List<AttendanceRecord> findByStudentId(Long studentId);
+    Page<AttendanceRecord> findByStudentId(Long studentId, Pageable pageable);
     List<AttendanceRecord> findByStudentIdAndSessionIdIn(Long studentId, List<Long> sessionIds);
     Optional<AttendanceRecord> findBySessionIdAndStudentId(Long sessionId, Long studentId);
 

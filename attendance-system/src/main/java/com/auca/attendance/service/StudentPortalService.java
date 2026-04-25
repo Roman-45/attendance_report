@@ -14,6 +14,8 @@ import com.auca.attendance.repository.EnrollmentRepository;
 import com.auca.attendance.repository.MarkEntryRepository;
 import com.auca.attendance.repository.StudentRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -55,10 +57,10 @@ public class StudentPortalService {
 
     /** GET /me/attendance — full attendance history across all modules. */
     @Transactional(readOnly = true)
-    public List<AttendanceRecordResponse> getMyAttendance(User currentUser) {
+    public Page<AttendanceRecordResponse> getMyAttendance(User currentUser, Pageable pageable) {
         Student student = resolveStudent(currentUser);
-        return recordRepo.findByStudentId(student.getId())
-                .stream().map(this::toRecordResponse).toList();
+        return recordRepo.findByStudentId(student.getId(), pageable)
+                .map(this::toRecordResponse);
     }
 
     /** GET /me/attendance/{moduleId} — attendance for one specific module. */

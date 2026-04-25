@@ -46,21 +46,22 @@ const typeConfig: Record<string, { icon: typeof BookOpen; color: string; label: 
 
 export default function Claims() {
   const [filter, setFilter] = useState('PENDING')
+  const [page, setPage] = useState(0)
   const [resolveOpen, setResolveOpen] = useState(false)
   const [selectedClaim, setSelectedClaim] = useState<Claim | null>(null)
   const [resolution, setResolution] = useState({ status: '' as '' | ClaimStatus, note: '' })
   const queryClient = useQueryClient()
   const { toast } = useToast()
 
-  const { data: claims = [], isLoading } = useQuery<Claim[]>({
-    queryKey: ['admin-claims', filter],
-    queryFn: () => {
-      if (filter === 'ALL') {
-        return client.get('/claims/pending').then(r => r.data.data)
-      }
-      return client.get('/claims/pending').then(r => r.data.data)
-    },
+  const { data, isLoading } = useQuery({
+    queryKey: ['admin-claims', filter, page],
+    queryFn: () =>
+      client.get('/claims/pending', { params: { page, size: 20 } })
+        .then(r => r.data.data),
   })
+
+  const claims: Claim[] = data?.content ?? []
+  const totalPages: number = data?.totalPages ?? 1
 
   const resolveMutation = useMutation({
     mutationFn: () => client.put(`/claims/${selectedClaim!.id}/resolve`, {
@@ -101,7 +102,7 @@ export default function Claims() {
           return (
             <button
               key={f.key}
-              onClick={() => setFilter(f.key)}
+              onClick={() => { setFilter(f.key); setPage(0) }}
               className={cn(
                 "flex items-center gap-3 p-3 rounded-xl border-2 transition-all text-left",
                 isActive
@@ -226,6 +227,31 @@ export default function Claims() {
               </Card>
             )
           })}
+        </div>
+      )}
+
+      {/* Pagination */}
+      {totalPages > 1 && (
+        <div className="flex items-center justify-center gap-2 pt-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setPage(p => Math.max(0, p - 1))}
+            disabled={page === 0}
+          >
+            Previous
+          </Button>
+          <span className="text-sm text-[#64748B] dark:text-[#94A3B8]">
+            Page {page + 1} of {totalPages}
+          </span>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setPage(p => p + 1)}
+            disabled={page >= totalPages - 1}
+          >
+            Next
+          </Button>
         </div>
       )}
 

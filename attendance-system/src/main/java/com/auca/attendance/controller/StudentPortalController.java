@@ -9,6 +9,10 @@ import com.auca.attendance.service.SeatingService;
 import com.auca.attendance.service.StudentPortalService;
 import com.auca.attendance.service.TeamService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -52,9 +56,11 @@ public class StudentPortalController {
 
     /** GET /me/attendance — full attendance history across all enrolled modules. */
     @GetMapping("/attendance")
-    public ResponseEntity<ApiResponse<List<AttendanceRecordResponse>>> getMyAttendance(
-            @AuthenticationPrincipal User currentUser) {
-        return ResponseEntity.ok(ApiResponse.success(portalService.getMyAttendance(currentUser)));
+    public ResponseEntity<ApiResponse<Page<AttendanceRecordResponse>>> getMyAttendance(
+            @AuthenticationPrincipal User currentUser,
+            @PageableDefault(size = 20, sort = "session.sessionDate", direction = Sort.Direction.DESC) Pageable pageable) {
+        return ResponseEntity.ok(ApiResponse.success(
+                portalService.getMyAttendance(currentUser, pageable)));
     }
 
     /** GET /me/attendance/{moduleId} — attendance for one specific module. */

@@ -8,6 +8,10 @@ import com.auca.attendance.exception.ResourceNotFoundException;
 import com.auca.attendance.repository.NotificationRepository;
 import com.auca.attendance.service.SseEmitterService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -15,8 +19,6 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
-
-import java.util.List;
 
 @RestController
 @RequestMapping("/api/v1/notifications")
@@ -42,10 +44,12 @@ public class NotificationController {
 
     @Transactional(readOnly = true)
     @GetMapping
-    public ResponseEntity<ApiResponse<List<NotificationResponse>>> getAll(@AuthenticationPrincipal User user) {
-        List<NotificationResponse> notifications = notificationRepository
-                .findByRecipientIdOrderByCreatedAtDesc(user.getId())
-                .stream().map(this::toResponse).toList();
+    public ResponseEntity<ApiResponse<Page<NotificationResponse>>> getAll(
+            @AuthenticationPrincipal User user,
+            @PageableDefault(size = 20, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable) {
+        Page<NotificationResponse> notifications = notificationRepository
+                .findByRecipientIdOrderByCreatedAtDesc(user.getId(), pageable)
+                .map(this::toResponse);
         return ResponseEntity.ok(ApiResponse.success(notifications));
     }
 
