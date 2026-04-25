@@ -61,6 +61,7 @@ export default function StudentPortal() {
   const activeTab = useActiveTab()
   const queryClient = useQueryClient()
   const [moduleFilter, setModuleFilter] = useState<string>('all')
+  const [attendancePage, setAttendancePage] = useState(0)
   const [downloading, setDownloading] = useState<string | null>(null)
   const [seatModuleId, setSeatModuleId] = useState<string>('')
   const [claimOpen, setClaimOpen] = useState(false)
@@ -89,10 +90,16 @@ export default function StudentPortal() {
     queryFn: () => client.get('/me/modules').then(r => r.data.data),
   })
 
-  const { data: attendance = [] } = useQuery({
-    queryKey: ['me-attendance'],
-    queryFn: () => client.get('/me/attendance').then(r => r.data.data),
+  const { data: attendanceData } = useQuery({
+    queryKey: ['me-attendance', attendancePage],
+    queryFn: () =>
+      client.get('/me/attendance', { params: { page: attendancePage, size: 20 } })
+        .then(r => r.data.data),
   })
+  const attendance: Array<{ id: number; sessionDate: string; moduleId?: number; moduleName?: string; period?: string; status: string; consecutiveAbsentFlag?: boolean }> =
+    attendanceData?.content ?? []
+  const attendanceTotalPages: number = attendanceData?.totalPages ?? 1
+  const attendanceTotalElements: number = attendanceData?.totalElements ?? attendance.length
 
   const { data: absenceSummary = [] } = useQuery({
     queryKey: ['me-absence-summary'],
@@ -175,7 +182,7 @@ export default function StudentPortal() {
             />
             <GradientStatCard
               label="Attendance Records"
-              value={attendance.length}
+              value={attendanceTotalElements}
               icon={ClipboardCheck}
               gradient="from-[#059669] to-[#0D9488]"
               shadow="shadow-[#059669]/20"
@@ -418,6 +425,30 @@ export default function StudentPortal() {
               </Table>
             </CardContent>
           </Card>
+
+          {attendanceTotalPages > 1 && (
+            <div className="flex items-center justify-center gap-2 pt-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setAttendancePage(p => Math.max(0, p - 1))}
+                disabled={attendancePage === 0}
+              >
+                Previous
+              </Button>
+              <span className="text-sm text-[#64748B] dark:text-[#94A3B8]">
+                Page {attendancePage + 1} of {attendanceTotalPages}
+              </span>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setAttendancePage(p => p + 1)}
+                disabled={attendancePage >= attendanceTotalPages - 1}
+              >
+                Next
+              </Button>
+            </div>
+          )}
         </div>
       )}
 

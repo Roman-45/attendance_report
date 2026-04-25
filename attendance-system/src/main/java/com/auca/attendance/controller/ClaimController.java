@@ -9,6 +9,10 @@ import com.auca.attendance.enums.ClaimStatus;
 import com.auca.attendance.service.ClaimService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -40,16 +44,19 @@ public class ClaimController {
 
     @GetMapping("/module/{moduleId}")
     @PreAuthorize("hasAnyRole('ADMIN','FACILITATOR')")
-    public ResponseEntity<ApiResponse<List<ClaimResponse>>> getClaimsForModule(
+    public ResponseEntity<ApiResponse<Page<ClaimResponse>>> getClaimsForModule(
             @PathVariable Long moduleId,
-            @RequestParam(required = false) ClaimStatus status) {
-        return ResponseEntity.ok(ApiResponse.success(claimService.getClaimsForModule(moduleId, status)));
+            @RequestParam(required = false) ClaimStatus status,
+            @PageableDefault(size = 20, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable) {
+        return ResponseEntity.ok(ApiResponse.success(
+                claimService.getClaimsForModule(moduleId, status, pageable)));
     }
 
     @GetMapping("/pending")
     @PreAuthorize("hasAnyRole('ADMIN','FACILITATOR')")
-    public ResponseEntity<ApiResponse<List<ClaimResponse>>> getPendingClaims() {
-        return ResponseEntity.ok(ApiResponse.success(claimService.getPendingClaims()));
+    public ResponseEntity<ApiResponse<Page<ClaimResponse>>> getPendingClaims(
+            @PageableDefault(size = 20, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable) {
+        return ResponseEntity.ok(ApiResponse.success(claimService.getPendingClaims(pageable)));
     }
 
     @PutMapping("/{claimId}/resolve")

@@ -17,6 +17,8 @@ import com.auca.attendance.repository.NotificationRepository;
 import com.auca.attendance.repository.StudentRepository;
 import com.auca.attendance.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -89,19 +91,19 @@ public class ClaimService {
     }
 
     @Transactional(readOnly = true)
-    public List<ClaimResponse> getClaimsForModule(Long moduleId, ClaimStatus status) {
+    public Page<ClaimResponse> getClaimsForModule(Long moduleId, ClaimStatus status, Pageable pageable) {
         if (status != null) {
-            return claimRepo.findByModuleIdAndStatus(moduleId, status)
-                    .stream().map(this::toResponse).toList();
+            return claimRepo.findByModuleIdAndStatus(moduleId, status, pageable)
+                    .map(this::toResponse);
         }
-        return claimRepo.findByModuleIdOrderByCreatedAtDesc(moduleId)
-                .stream().map(this::toResponse).toList();
+        return claimRepo.findByModuleIdOrderByCreatedAtDesc(moduleId, pageable)
+                .map(this::toResponse);
     }
 
     @Transactional(readOnly = true)
-    public List<ClaimResponse> getPendingClaims() {
-        return claimRepo.findByStatusOrderByCreatedAtDesc(ClaimStatus.PENDING)
-                .stream().map(this::toResponse).toList();
+    public Page<ClaimResponse> getPendingClaims(Pageable pageable) {
+        return claimRepo.findByStatusOrderByCreatedAtDesc(ClaimStatus.PENDING, pageable)
+                .map(this::toResponse);
     }
 
     @Transactional

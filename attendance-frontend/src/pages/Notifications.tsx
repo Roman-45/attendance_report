@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import client from '@/api/client'
 import type { Notification } from '@/types'
@@ -24,12 +25,16 @@ const TYPE_CONFIG: Record<string, { label: string; icon: React.ElementType; colo
 }
 
 export default function Notifications() {
+  const [page, setPage] = useState(0)
   const queryClient = useQueryClient()
 
-  const { data: notifications = [], isLoading } = useQuery<Notification[]>({
-    queryKey: ['notifications'],
-    queryFn: () => client.get('/notifications').then(r => r.data.data),
+  const { data, isLoading } = useQuery({
+    queryKey: ['notifications', page],
+    queryFn: () => client.get('/notifications', { params: { page, size: 20 } }).then(r => r.data.data),
   })
+
+  const notifications: Notification[] = data?.content ?? []
+  const totalPages: number = data?.totalPages ?? 1
 
   const markReadMutation = useMutation({
     mutationFn: (id: number) => client.patch(`/notifications/${id}/read`),
@@ -196,6 +201,31 @@ export default function Notifications() {
               )
             })}
           </div>
+        </div>
+      )}
+
+      {/* Pagination */}
+      {totalPages > 1 && (
+        <div className="flex items-center justify-center gap-2 pt-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setPage(p => Math.max(0, p - 1))}
+            disabled={page === 0}
+          >
+            Previous
+          </Button>
+          <span className="text-sm text-[#64748B] dark:text-[#94A3B8]">
+            Page {page + 1} of {totalPages}
+          </span>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setPage(p => p + 1)}
+            disabled={page >= totalPages - 1}
+          >
+            Next
+          </Button>
         </div>
       )}
     </div>
