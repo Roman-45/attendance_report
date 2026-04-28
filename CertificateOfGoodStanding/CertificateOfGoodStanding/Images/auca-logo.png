@@ -1,0 +1,4 @@
+PLACEHOLDER - Replace this file with the official AUCA logo PNG.
+The Certificate.aspx page references ~/Images/auca-logo.png at the top-left
+of the letterhead. Any square PNG (recommended ~300x300px) will display correctly
+because the CSS sizes the image to 86x86px while preserving aspect ratio.

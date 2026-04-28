@@ -1,0 +1,32 @@
+<%@ Master Language="C#" AutoEventWireup="true" CodeBehind="Site.Master.cs" Inherits="CertificateOfGoodStanding.SiteMaster" %>
+
+<!DOCTYPE html>
+<html lang="en">
+<head runat="server">
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title><asp:ContentPlaceHolder ID="TitleContent" runat="server">AUCA Certificate of Good Standing</asp:ContentPlaceHolder></title>
+    <link href="<%= ResolveUrl("~/Content/site.css") %>" rel="stylesheet" type="text/css" />
+    <link href="<%= ResolveUrl("~/Content/certificate.css") %>" rel="stylesheet" type="text/css" />
+    <asp:ContentPlaceHolder ID="HeadContent" runat="server" />
+</head>
+<body>
+    <form id="mainForm" runat="server">
+        <header class="app-header no-print">
+            <div class="brand">
+                <span class="brand-mark">AUCA</span>
+                <span class="brand-name">Certificate of Good Standing</span>
+            </div>
+            <nav>
+                <a href="<%= ResolveUrl("~/Default.aspx") %>">Home</a>
+            </nav>
+        </header>
+        <main class="app-main">
+            <asp:ContentPlaceHolder ID="MainContent" runat="server" />
+        </main>
+        <footer class="app-footer no-print">
+            &copy; <%= DateTime.Now.Year %> Adventist University of Central Africa
+        </footer>
+    </form>
+</body>
+</html>
