@@ -18,7 +18,8 @@
 
         <header class="cert-header">
             <div class="cert-logo">
-                <img src="<%= ResolveUrl("~/Images/auca-logo.png") %>" alt="AUCA Logo" />
+                <img src="<%= ResolveUrl("~/Images/auca-logo.svg") %>" alt="AUCA Logo"
+                     onerror="this.onerror=null;this.src='<%= ResolveUrl("~/Images/auca-logo.png") %>';" />
             </div>
             <div class="cert-university">
                 <h1><asp:Literal ID="litUniversityName" runat="server" /></h1>

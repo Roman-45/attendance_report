@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400" width="400" height="400" role="img" aria-label="Adventist University of Central Africa logo">
+  <defs>
+    <path id="topArc" d="M 50,200 a 150,150 0 0 1 300,0" fill="none" />
+    <path id="bottomArc" d="M 70,200 a 130,130 0 0 0 260,0" fill="none" />
+  </defs>
+
+  <!-- Outer black ring -->
+  <circle cx="200" cy="200" r="195" fill="#000" />
+  <!-- Blue band -->
+  <circle cx="200" cy="200" r="180" fill="#1565C0" />
+  <!-- Inner black border around blue disc -->
+  <circle cx="200" cy="200" r="135" fill="#000" />
+  <!-- Inner blue disc -->
+  <circle cx="200" cy="200" r="130" fill="#1565C0" />
+
+  <!-- Curved text along the top -->
+  <text font-family="Arial Black, Arial, sans-serif" font-weight="900"
+        font-size="22" fill="#000" letter-spacing="2">
+    <textPath href="#topArc" startOffset="50%" text-anchor="middle">
+      ADVENTIST UNIVERSITY OF CENTRAL AFRICA
+    </textPath>
+  </text>
+
+  <!-- Bottom text: RWANDA -->
+  <text x="200" y="370" font-family="Arial Black, Arial, sans-serif"
+        font-weight="900" font-size="26" fill="#000"
+        text-anchor="middle" letter-spacing="4">RWANDA</text>
+
+  <!-- Dot separators on the band -->
+  <circle cx="38" cy="200" r="6" fill="#000" />
+  <circle cx="362" cy="200" r="6" fill="#000" />
+
+  <!-- Stylised AAUC monogram in center (approximation) -->
+  <!-- Triangular A peak shape -->
+  <polygon points="200,70 290,235 110,235" fill="#000" />
+  <!-- Cut-out inner triangle to give it the open A look -->
+  <polygon points="200,115 260,225 140,225" fill="#1565C0" />
+  <!-- Crossbar -->
+  <rect x="155" y="180" width="90" height="14" fill="#000" />
+  <!-- U shape (left leg) -->
+  <rect x="138" y="225" width="22" height="80" fill="#000" />
+  <rect x="138" y="288" width="64" height="22" fill="#000" />
+  <rect x="180" y="225" width="22" height="80" fill="#000" />
+  <!-- C shape (right) -->
+  <path d="M 290,225 a 45,45 0 1 0 0,80 l 0,-22 a 30,30 0 1 1 0,-36 z" fill="#000" />
+</svg>

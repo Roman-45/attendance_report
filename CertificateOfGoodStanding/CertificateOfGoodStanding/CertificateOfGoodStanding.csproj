@@ -76,6 +76,7 @@
     <Content Include="Web.config" />
     <Content Include="Database\schema.sql" />
     <Content Include="Images\auca-logo.png" />
+    <Content Include="Images\auca-logo.svg" />
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Site.Master.cs">
