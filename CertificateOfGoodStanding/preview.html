@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>Preview - Certificate of Good Standing</title>
+<style>
+/* ---- shell ---- */
+* { box-sizing: border-box; }
+body { margin: 0; font-family: "Segoe UI", Roboto, Arial, sans-serif; background: #f1f4f9; color: #1f2937; padding: 24px; }
+.toolbar { max-width: 8.5in; margin: 0 auto 18px; display: flex; gap: 10px; justify-content: flex-end; }
+.btn { padding: 10px 18px; border: 0; border-radius: 8px; font-size: 0.95rem; cursor: pointer; }
+.btn-primary { background: #14375a; color: #fff; }
+
+/* ---- certificate (mirrors Content/certificate.css) ---- */
+.certificate-page {
+    background: #fff;
+    color: #111827;
+    width: 8.5in;
+    min-height: 11in;
+    margin: 0 auto;
+    padding: 0.6in 0.7in;
+    box-shadow: 0 6px 24px rgba(20,55,90,.15);
+    font-family: "Times New Roman", Georgia, serif;
+    font-size: 12.5pt;
+    line-height: 1.55;
+    position: relative;
+}
+.cert-header {
+    display: flex;
+    align-items: flex-start;
+    gap: 18px;
+    border: 1px solid #cfd8e3;
+    padding: 10px 14px;
+    border-radius: 4px;
+}
+.cert-logo {
+    width: 86px; height: 86px;
+    border-radius: 50%;
+    background: #14375a;
+    color: #fff;
+    font-weight: 800;
+    text-align: center;
+    line-height: 86px;
+    letter-spacing: 1px;
+    font-family: "Segoe UI", Arial, sans-serif;
+    font-size: 16pt;
+    flex-shrink: 0;
+}
+.cert-university { flex: 1; text-align: center; position: relative; }
+.cert-university h1 { font-size: 22pt; color: #14375a; margin: 0 0 2px; letter-spacing: 0.3px; }
+.cert-address, .cert-contact { margin: 2px 0; font-size: 10.5pt; color: #1f2937; }
+.cert-watermark {
+    position: absolute;
+    top: 30px; left: 0; right: 0;
+    text-align: center;
+    font-style: italic;
+    font-size: 11pt;
+    color: rgba(20, 55, 90, 0.18);
+    letter-spacing: 1px;
+    pointer-events: none;
+}
+.cert-rule { border: 0; border-top: 1px solid #1f2937; margin: 10px 0 22px; }
+.cert-place-date { margin: 0 0 18px; }
+.cert-title { text-align: center; text-decoration: underline; font-size: 16pt; font-weight: 700; margin: 12px 0 28px; letter-spacing: 0.5px; }
+.cert-body p { margin: 8px 0; text-align: justify; }
+.cert-subject { margin-top: 14px !important; font-size: 13pt; }
+.cert-purpose { margin-top: 22px !important; }
+.cert-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    margin-top: 50px;
+    gap: 24px;
+}
+.cert-signature { flex: 1; }
+.cert-sig-line { height: 70px; margin-bottom: 4px; border-bottom: 1px solid #111827; position: relative; }
+.cert-signature p { margin: 2px 0; font-size: 11pt; }
+.cert-qr { text-align: center; }
+.qr-placeholder {
+    width: 120px; height: 120px;
+    background:
+        repeating-linear-gradient(0deg,  #111 0 6px, #fff 6px 12px),
+        repeating-linear-gradient(90deg, #111 0 6px, #fff 6px 12px);
+    background-blend-mode: multiply;
+    border: 4px solid #111;
+    display: flex; align-items: center; justify-content: center;
+    color: #fff; font-weight: 700;
+    margin: 0 auto 6px;
+}
+.qr-placeholder span { background: #111; padding: 2px 8px; border-radius: 4px; font-family: "Segoe UI", sans-serif; font-size: 12pt; }
+.cert-qr-caption { margin: 0; font-size: 10.5pt; }
+
+@media print {
+    body { background: #fff; padding: 0; }
+    .toolbar { display: none; }
+    .certificate-page { box-shadow: none; margin: 0; width: auto; min-height: auto; padding: 0.5in; }
+    @page { size: Letter; margin: 0.4in; }
+}
+</style>
+</head>
+<body>
+
+<div class="toolbar">
+    <button type="button" class="btn btn-primary" onclick="window.print()">Print / Save as PDF</button>
+</div>
+
+<div class="certificate-page">
+
+    <header class="cert-header">
+        <div class="cert-logo">AUCA</div>
+        <div class="cert-university">
+            <h1>Adventist University of Central Africa</h1>
+            <p class="cert-address">P.O. Box 2461 Kigali, Rwanda &nbsp;|&nbsp; www.auca.ac.rw &nbsp;|&nbsp; info@auca.ac.rw</p>
+            <p class="cert-watermark">Directorate for Admissions and Academic Records</p>
+            <p class="cert-contact">Mobile Phone: (+250)724 796 996 / 724 474 805 / 788 473 035</p>
+            <p class="cert-contact">Email: registrar@auca.ac.rw, juvenal.nsengiyumva@auca.ac.rw</p>
+        </div>
+    </header>
+
+    <hr class="cert-rule" />
+
+    <p class="cert-place-date">Kigali, April 28, 2026</p>
+
+    <h2 class="cert-title">CERTIFICATE OF GOOD STANDING</h2>
+
+    <div class="cert-body">
+        <p>
+            I, the undersigned, <strong>Eng. Nsengiyumva Juvenal</strong>,
+            Director for Admissions and Academic Records of the Adventist University of
+            Central Africa, hereby certify that:
+        </p>
+
+        <p class="cert-subject"><strong>Tuyizere Dieudonne</strong>,</p>
+
+        <p>Born on <strong>June 12, 2006</strong></p>
+
+        <p>has been a regular student of this University, registered under ID No.
+           <strong>2025SEN349</strong>,</p>
+
+        <p>From <strong>January 2026</strong> to <strong>Date</strong>.</p>
+
+        <p>Year: <strong>One (Semester 1)</strong></p>
+        <p>Faculty: <strong>Information Technology</strong></p>
+        <p>Major: <strong>Software Engineering</strong></p>
+        <p>Academic year: <strong>2025-2026 (September 2025-August 2026)</strong></p>
+        <p>Validity: <strong>September 2025-August 2026</strong></p>
+
+        <p class="cert-purpose">
+            This certificate is issued for any legal or administrative purpose it may serve.
+        </p>
+    </div>
+
+    <footer class="cert-footer">
+        <div class="cert-signature">
+            <div class="cert-sig-line"></div>
+            <p><strong>Eng. Nsengiyumva Juvenal</strong></p>
+            <p><strong>Director for Admissions and Academic Records</strong></p>
+            <p>Adventist University of Central Africa</p>
+        </div>
+        <div class="cert-qr">
+            <div class="qr-placeholder" aria-label="Verification QR code"><span>QR</span></div>
+            <p class="cert-qr-caption">Scan to verify<br/>my Validity</p>
+        </div>
+    </footer>
+</div>
+
+</body>
+</html>
