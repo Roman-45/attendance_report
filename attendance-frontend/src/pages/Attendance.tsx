@@ -70,8 +70,6 @@ interface EnrollmentDTO {
   program?: string
 }
 
-const PERIODS = ['MORNING', 'AFTERNOON', 'EVENING'] as const
-
 const periodConfig: Record<
   string,
   { icon: typeof Sun; color: string; bg: string }
@@ -170,9 +168,13 @@ export default function Attendance() {
   })
 
   const createSessionMutation = useMutation({
+    // AUCA classes are evening-only. Only the date matters; the server
+    // fills startTime=18:00, endTime=21:00, period=EVENING.
     mutationFn: () =>
       client
-        .post(`/modules/${selectedModuleId}/sessions`, sessionForm)
+        .post(`/modules/${selectedModuleId}/sessions`, {
+          sessionDate: sessionForm.sessionDate,
+        })
         .then((r) => r.data.data as AttendanceSession),
     onSuccess: (created) => {
       queryClient.invalidateQueries({
@@ -395,61 +397,13 @@ export default function Attendance() {
                 required
               />
             </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label>Start time</Label>
-                <Input
-                  type="time"
-                  value={sessionForm.startTime}
-                  onChange={(e) =>
-                    setSessionForm((f) => ({
-                      ...f,
-                      startTime: e.target.value,
-                    }))
-                  }
-                  required
-                />
-              </div>
-              <div className="space-y-2">
-                <Label>End time</Label>
-                <Input
-                  type="time"
-                  value={sessionForm.endTime}
-                  onChange={(e) =>
-                    setSessionForm((f) => ({ ...f, endTime: e.target.value }))
-                  }
-                  required
-                />
-              </div>
-            </div>
-            <div className="space-y-2">
-              <Label>Period</Label>
-              <div className="grid grid-cols-3 gap-2">
-                {PERIODS.map((p) => {
-                  const cfg = periodConfig[p]
-                  const PIcon = cfg.icon
-                  const isActive = sessionForm.period === p
-                  return (
-                    <button
-                      key={p}
-                      type="button"
-                      onClick={() =>
-                        setSessionForm((f) => ({ ...f, period: p }))
-                      }
-                      className={cn(
-                        'flex flex-col items-center gap-1 py-3 rounded-xl border-2 transition-all text-sm font-medium',
-                        isActive
-                          ? 'border-brand bg-brand-light text-brand'
-                          : 'border-border text-muted-foreground hover:border-border-strong',
-                      )}
-                    >
-                      <PIcon className="h-4 w-4" />
-                      <span className="text-xs capitalize">
-                        {p.toLowerCase()}
-                      </span>
-                    </button>
-                  )
-                })}
+            <div className="rounded-lg border border-border bg-surface-sunken px-3 py-2.5 flex items-center gap-2.5">
+              <Moon className="h-4 w-4 text-status-excused flex-shrink-0" />
+              <div className="text-[12px] leading-snug">
+                <p className="font-medium text-foreground">Evening class</p>
+                <p className="text-muted-foreground">
+                  All AUCA sessions run 18:00 – 21:00.
+                </p>
               </div>
             </div>
             <DialogFooter>

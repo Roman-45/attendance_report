@@ -847,9 +847,6 @@ export default function Marks() {
                               <p className="text-[13px] font-medium text-[#0F172A] dark:text-[#F1F5F9] truncate max-w-[180px]">
                                 {en.studentName}
                               </p>
-                              <p className="text-[11px] text-[#94A3B8] font-mono">
-                                {en.studentStudentId}
-                              </p>
                             </div>
                           </div>
                         </td>
@@ -958,9 +955,6 @@ export default function Marks() {
                       <div className="min-w-0">
                         <p className="text-[13px] font-medium text-[#0F172A] dark:text-[#F1F5F9] truncate">
                           {en.studentName}
-                        </p>
-                        <p className="text-[11px] text-[#94A3B8] font-mono">
-                          {en.studentStudentId}
                         </p>
                       </div>
                     </div>

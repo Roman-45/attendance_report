@@ -10,9 +10,10 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '
 import { Badge } from '@/components/ui/badge'
 import { useToast } from '@/hooks/use-toast'
 import { useAuth } from '@/context/AuthContext'
-import { Plus, Users, BookOpen, Calendar, Pencil, PlayCircle, XCircle } from 'lucide-react'
+import { Plus, Users, BookOpen, Calendar, Pencil, PlayCircle, XCircle, GraduationCap } from 'lucide-react'
 import { format } from 'date-fns'
 import { EnrollmentDialog } from '@/components/EnrollmentDialog'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { cn } from '@/lib/utils'
 
 const moduleColors = [
@@ -32,15 +33,27 @@ const statusBadgeClass: Record<string, string> = {
   CLOSED: 'bg-[#F1F5F9] text-[#64748B] border-[#E2E8F0]',
 }
 
+interface InstructorCandidate {
+  id: number
+  name: string
+  email: string
+  currentModuleId: number | null
+  currentModuleCode: string | null
+}
+
 export default function Modules() {
   const { user, hasRole } = useAuth()
   const isAdmin = hasRole('ADMIN')
+  const isFacilitator = hasRole('FACILITATOR')
+  const canAssignInstructor = isAdmin || isFacilitator
   const isInstructor = user?.role === 'INSTRUCTOR'
 
   const [dialogOpen, setDialogOpen] = useState(false)
   const [editModule, setEditModule] = useState<Module | null>(null)
   const [form, setForm] = useState({ code: '', name: '', description: '', startDate: '', endDate: '' })
   const [enrollModule, setEnrollModule] = useState<Module | null>(null)
+  const [assignModule, setAssignModule] = useState<Module | null>(null)
+  const [pickedInstructorId, setPickedInstructorId] = useState<string>('')
   const queryClient = useQueryClient()
   const { toast } = useToast()
 
@@ -59,6 +72,43 @@ export default function Modules() {
     },
     onError: (err: unknown) => {
       const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message || 'Failed'
+      toast({ variant: 'destructive', title: 'Error', description: msg })
+    },
+  })
+
+  const { data: candidates = [] } = useQuery<InstructorCandidate[]>({
+    queryKey: ['instructor-candidates'],
+    queryFn: () => client.get('/modules/instructor-candidates').then(r => r.data.data),
+    enabled: canAssignInstructor,
+  })
+
+  const assignMutation = useMutation({
+    mutationFn: ({ moduleId, instructorId }: { moduleId: number; instructorId: number }) =>
+      client.post(`/modules/${moduleId}/instructors`, null, { params: { instructorId } }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['modules'] })
+      queryClient.invalidateQueries({ queryKey: ['instructor-candidates'] })
+      setAssignModule(null)
+      setPickedInstructorId('')
+      toast({ title: 'Instructor assigned' })
+    },
+    onError: (err: unknown) => {
+      const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message || 'Assignment failed'
+      toast({ variant: 'destructive', title: 'Error', description: msg })
+    },
+  })
+
+  const unassignMutation = useMutation({
+    mutationFn: ({ moduleId, instructorId }: { moduleId: number; instructorId: number }) =>
+      client.delete(`/modules/${moduleId}/instructors/${instructorId}`),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['modules'] })
+      queryClient.invalidateQueries({ queryKey: ['instructor-candidates'] })
+      setAssignModule(null)
+      toast({ title: 'Instructor unassigned' })
+    },
+    onError: (err: unknown) => {
+      const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message || 'Unassign failed'
       toast({ variant: 'destructive', title: 'Error', description: msg })
     },
   })
@@ -193,11 +243,21 @@ export default function Modules() {
                   )}
 
                   {/* Dates */}
-                  <div className="flex items-center gap-1.5 text-xs text-[#94A3B8] mb-4">
+                  <div className="flex items-center gap-1.5 text-xs text-[#94A3B8] mb-2">
                     <Calendar className="h-3 w-3" />
                     <span>{m.startDate ? format(new Date(m.startDate), 'MMM d') : '—'}</span>
                     <span>→</span>
                     <span>{m.endDate ? format(new Date(m.endDate), 'MMM d, yyyy') : '—'}</span>
+                  </div>
+
+                  {/* Instructor */}
+                  <div className="flex items-center gap-1.5 text-xs text-muted-foreground mb-4">
+                    <GraduationCap className="h-3 w-3" />
+                    <span className="truncate">
+                      {m.instructors && m.instructors.length > 0
+                        ? m.instructors[0]
+                        : <span className="italic text-[#94A3B8]">No instructor assigned</span>}
+                    </span>
                   </div>
 
                   {/* Actions — INSTRUCTOR */}
@@ -233,12 +293,12 @@ export default function Modules() {
 
                   {/* Actions — ADMIN / FACILITATOR */}
                   {!isInstructor && (
-                    <div className="flex items-center gap-2">
+                    <div className="flex flex-wrap items-center gap-2">
                       {isAdmin && (
                         <Button
                           variant="outline"
                           size="sm"
-                          className="flex-1 text-xs h-8 border-[#E2E8F0] dark:border-[#1E3A5F] text-[#334155] dark:text-[#94A3B8] hover:border-[#CBD5E1] hover:bg-[#F8FAFC] dark:hover:bg-[#1E293B]"
+                          className="text-xs h-8"
                           onClick={() => openEdit(m)}
                         >
                           <Pencil className="h-3 w-3 mr-1" /> Edit
@@ -247,11 +307,24 @@ export default function Modules() {
                       <Button
                         variant="outline"
                         size="sm"
-                        className="flex-1 text-xs h-8 border-[#E2E8F0] dark:border-[#1E3A5F] text-[#334155] dark:text-[#94A3B8] hover:border-[#CBD5E1] hover:bg-[#F8FAFC] dark:hover:bg-[#1E293B]"
+                        className="text-xs h-8"
                         onClick={() => setEnrollModule(m)}
                       >
                         <Users className="h-3 w-3 mr-1" /> Enroll
                       </Button>
+                      {canAssignInstructor && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="text-xs h-8"
+                          onClick={() => {
+                            setAssignModule(m)
+                            setPickedInstructorId('')
+                          }}
+                        >
+                          <GraduationCap className="h-3 w-3 mr-1" /> Instructor
+                        </Button>
+                      )}
                     </div>
                   )}
                 </CardContent>
@@ -352,6 +425,82 @@ export default function Modules() {
           open={!!enrollModule}
           onOpenChange={(open) => { if (!open) setEnrollModule(null) }}
         />
+      )}
+
+      {/* Assign Instructor Dialog (admin + facilitator) */}
+      {assignModule && (
+        <Dialog open={!!assignModule} onOpenChange={(open) => { if (!open) setAssignModule(null) }}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <GraduationCap className="h-5 w-5 text-brand" />
+                Assign instructor — {assignModule.code}
+              </DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4">
+              {assignModule.instructors && assignModule.instructors.length > 0 ? (
+                <div className="rounded-md border border-border-subtle bg-surface-sunken p-3 flex items-center justify-between">
+                  <div>
+                    <p className="text-[11px] uppercase tracking-wider text-muted-foreground">
+                      Currently teaching
+                    </p>
+                    <p className="text-sm font-medium text-foreground">{assignModule.instructors[0]}</p>
+                  </div>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      const currentName = assignModule.instructors?.[0]
+                      const current = candidates.find(c => c.name === currentName)
+                      if (current) unassignMutation.mutate({ moduleId: assignModule.id, instructorId: current.id })
+                    }}
+                    disabled={unassignMutation.isPending}
+                  >
+                    Unassign
+                  </Button>
+                </div>
+              ) : (
+                <p className="text-sm text-muted-foreground">
+                  This module has no instructor yet. Pick one to assign.
+                </p>
+              )}
+
+              <div className="space-y-2">
+                <Label>Pick an instructor</Label>
+                <Select value={pickedInstructorId} onValueChange={setPickedInstructorId}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="— choose an instructor —" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {candidates.map(c => (
+                      <SelectItem key={c.id} value={String(c.id)}>
+                        {c.name}
+                        {c.currentModuleCode
+                          ? ` — already teaches ${c.currentModuleCode}`
+                          : ''}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <p className="text-[11px] text-muted-foreground">
+                  Each instructor teaches at most one module. Reassigning here unbinds them from any previous module.
+                </p>
+              </div>
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setAssignModule(null)}>Cancel</Button>
+              <Button
+                disabled={!pickedInstructorId || assignMutation.isPending}
+                onClick={() => assignMutation.mutate({
+                  moduleId: assignModule.id,
+                  instructorId: Number(pickedInstructorId),
+                })}
+              >
+                {assignMutation.isPending ? 'Assigning…' : 'Assign'}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       )}
     </div>
   )

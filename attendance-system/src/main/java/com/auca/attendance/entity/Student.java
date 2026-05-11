@@ -23,10 +23,12 @@ public class Student {
     @Column(nullable = false, length = 100)
     private String name;
 
-    @Column(nullable = false, unique = true, length = 150)
+    /** Optional. Unique constraint dropped in V39 — service rejects duplicates only when set. */
+    @Column(length = 150)
     private String email;
 
-    @Column(name = "cohort_year", nullable = false)
+    /** Optional. Defaults to current academic year on creation if missing. */
+    @Column(name = "cohort_year")
     private Integer cohortYear;
 
     @Column(length = 100)

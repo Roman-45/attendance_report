@@ -4,7 +4,6 @@ import { useAuth } from '@/context/AuthContext'
 import { SidebarProvider } from '@/context/SidebarContext'
 import { Sidebar } from './Sidebar'
 import { TopBar } from './TopBar'
-import { GraduationCap } from 'lucide-react'
 
 export function AppLayout() {
   const { isAuthenticated, isLoading, user } = useAuth()
@@ -14,9 +13,11 @@ export function AppLayout() {
   if (isLoading) {
     return (
       <div className="flex h-screen flex-col items-center justify-center gap-4 bg-background">
-        <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-brand shadow-md">
-          <GraduationCap className="h-7 w-7 text-white" />
-        </div>
+        <img
+          src="/auca-logo.jpg"
+          alt="AUCA"
+          className="h-14 w-14 rounded-2xl object-cover shadow-md"
+        />
         <div className="h-1 w-32 overflow-hidden rounded-full bg-muted">
           <div className="h-full w-1/2 rounded-full bg-brand animate-[loading_1.2s_ease-in-out_infinite]" />
         </div>

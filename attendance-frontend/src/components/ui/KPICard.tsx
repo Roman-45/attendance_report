@@ -89,7 +89,7 @@ export function KPICard({
       </div>
 
       <div className="leading-none">
-        <span className={`text-[32px] font-bold tabular-nums tracking-tight ${valueStyles[variant]}`}>
+        <span className={`font-display text-[36px] font-medium tabular-nums tracking-tight ${valueStyles[variant]}`}>
           {value}
         </span>
       </div>

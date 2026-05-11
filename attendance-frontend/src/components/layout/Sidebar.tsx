@@ -51,12 +51,12 @@ function NavItemButton({
       title={collapsed ? item.label : undefined}
       aria-current={isActive ? "page" : undefined}
       className={[
-        "relative w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-[13px] font-medium",
+        "relative w-full flex items-center gap-2.5 px-3 py-2 rounded-md text-[13px] font-medium",
         "transition-all duration-150 group",
-        "focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-brand",
+        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/40",
         isActive
-          ? "bg-brand-light text-brand before:absolute before:left-0 before:top-1/2 before:-translate-y-1/2 before:h-5 before:w-0.5 before:rounded-r before:bg-brand"
-          : "text-muted-foreground hover:bg-background hover:text-foreground",
+          ? "bg-brand-light text-brand before:absolute before:left-0 before:top-1/2 before:-translate-y-1/2 before:h-6 before:w-[3px] before:rounded-r-sm before:bg-brand"
+          : "text-muted-foreground hover:bg-surface-sunken hover:text-foreground",
         collapsed ? "justify-center px-0" : "",
       ].join(" ")}
     >
@@ -70,12 +70,12 @@ function NavItemButton({
         <span className="flex-1 truncate text-left">{item.label}</span>
       )}
       {!collapsed && item.badge !== undefined && item.badge > 0 && (
-        <span className="flex-shrink-0 min-w-[18px] h-[18px] px-1 rounded-full bg-status-absent text-white text-[10px] font-semibold flex items-center justify-center tabular-nums">
+        <span className="flex-shrink-0 min-w-[18px] h-[18px] px-1 rounded-full bg-dns-500 text-white text-[10px] font-semibold flex items-center justify-center tabular-nums">
           {item.badge > 99 ? "99+" : item.badge}
         </span>
       )}
       {collapsed && item.badge !== undefined && item.badge > 0 && (
-        <span className="absolute top-0.5 right-0.5 w-2 h-2 rounded-full bg-status-absent border-2 border-white" />
+        <span className="absolute top-0.5 right-0.5 w-2 h-2 rounded-full bg-dns-500 border-2 border-white" />
       )}
     </button>
   )
@@ -173,7 +173,7 @@ function UserMenu({ collapsed }: { collapsed: boolean }) {
                 setOpen(false)
                 logout()
               }}
-              className="w-full flex items-center gap-2.5 px-3 py-1.5 text-[12px] text-status-absent hover:bg-status-absent-bg transition-colors"
+              className="w-full flex items-center gap-2.5 px-3 py-1.5 text-[12px] text-destructive hover:bg-destructive-bg transition-colors"
             >
               <LogOut size={13} strokeWidth={1.75} />
               Sign out
@@ -251,17 +251,17 @@ export function Sidebar({ mobileOpen = false, onMobileClose }: SidebarProps) {
         ].join(" ")}
       >
         <div className="flex items-center gap-2.5 min-w-0">
-          <div className="w-7 h-7 rounded-lg bg-brand flex items-center justify-center flex-shrink-0">
-            <span className="text-white text-[11px] font-bold tracking-wide select-none">
-              A
-            </span>
-          </div>
+          <img
+            src="/auca-logo.jpg"
+            alt="AUCA Innovation Center"
+            className="w-7 h-7 rounded-lg flex-shrink-0 object-cover ring-1 ring-border"
+          />
           {!collapsed && (
             <div className="min-w-0">
-              <p className="text-[14px] font-bold text-foreground truncate leading-none">
+              <p className="font-display text-[16px] font-medium text-foreground truncate leading-none tracking-tight">
                 AUCA
               </p>
-              <p className="text-[10px] text-muted-foreground truncate leading-none mt-0.5">
+              <p className="text-[10px] text-muted-foreground truncate leading-none mt-1">
                 Academic Portal
               </p>
             </div>
@@ -298,7 +298,7 @@ export function Sidebar({ mobileOpen = false, onMobileClose }: SidebarProps) {
         {sections.map((section, si) => (
           <div key={si}>
             {!collapsed && section.label && (
-              <p className="px-3 mb-1 text-[10px] font-semibold uppercase tracking-wider text-subtle-foreground">
+              <p className="caption px-3 mb-1.5">
                 {section.label}
               </p>
             )}

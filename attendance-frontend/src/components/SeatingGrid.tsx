@@ -197,7 +197,7 @@ export function SeatingGrid({ layout, onSeatClick, readOnly = false, highlightSt
             </div>
             <div>
               <p className="font-semibold text-[13px] leading-tight">{assignment.studentName}</p>
-              <p className="text-[11px] opacity-60">{assignment.registrationNumber} &middot; {seatLabel}</p>
+              <p className="text-[11px] opacity-60">{seatLabel}</p>
             </div>
           </div>
         )
@@ -239,7 +239,7 @@ function SeatButton({
       onClick={() => onSeatClick?.(rowNum, colNum, assignment)}
       onMouseEnter={() => setHoveredSeat(key)}
       onMouseLeave={() => setHoveredSeat(null)}
-      title={assignment ? `${assignment.studentName} (${assignment.registrationNumber})` : `Seat ${rowNum}${label} — Available`}
+      title={assignment ? assignment.studentName : `Seat ${rowNum}${label} — Available`}
       className={cn(
         "relative w-[52px] h-10 rounded-lg text-[10px] font-semibold transition-all duration-200 flex flex-col items-center justify-center gap-0.5 group",
 

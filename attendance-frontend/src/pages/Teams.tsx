@@ -425,7 +425,7 @@ export default function Teams() {
                 <SelectContent>
                   {enrolledStudents.map((s) => (
                     <SelectItem key={s.studentId} value={String(s.studentId)}>
-                      {s.studentName} ({s.studentStudentId})
+                      {s.studentName}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -559,7 +559,7 @@ export default function Teams() {
                 <SelectContent>
                   {enrolledStudents.map((s) => (
                     <SelectItem key={s.studentId} value={String(s.studentId)}>
-                      {s.studentName} ({s.studentStudentId})
+                      {s.studentName}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -600,7 +600,7 @@ export default function Teams() {
                   .filter(s => !memberStudentIds.has(s.studentId))
                   .map(s => (
                     <SelectItem key={s.studentId} value={String(s.studentId)}>
-                      {s.studentName} ({s.studentStudentId})
+                      {s.studentName}
                     </SelectItem>
                   ))}
               </SelectContent>
@@ -621,15 +621,13 @@ export default function Teams() {
               <TableHeader>
                 <TableRow className="border-[#E2E8F0] dark:border-[#1E3A5F]">
                   <TableHead className="text-[#64748B] dark:text-[#94A3B8]">Student</TableHead>
-                  <TableHead className="text-[#64748B] dark:text-[#94A3B8]">Reg. No.</TableHead>
-                  <TableHead className="text-[#64748B] dark:text-[#94A3B8]" title="Per-member attendance % is not yet exposed by the API (TODO).">Attend %</TableHead>
                   <TableHead className="w-16" />
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {members.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={4} className="text-center py-8 text-[#64748B] dark:text-[#94A3B8]">
+                    <TableCell colSpan={2} className="text-center py-8 text-[#64748B] dark:text-[#94A3B8]">
                       <UserPlus className="h-6 w-6 mx-auto mb-2 opacity-30" />
                       No members yet — add students above
                     </TableCell>
@@ -659,8 +657,6 @@ export default function Teams() {
                           </div>
                         </div>
                       </TableCell>
-                      <TableCell className="text-sm text-[#64748B] dark:text-[#94A3B8]">{m.registrationNumber}</TableCell>
-                      <TableCell className="text-sm text-[#94A3B8]" title="Not yet exposed by the API">—</TableCell>
                       <TableCell>
                         <Button
                           variant="ghost" size="sm"

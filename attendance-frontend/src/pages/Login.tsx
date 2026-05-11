@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { GraduationCap, ArrowRight, ShieldCheck, ClipboardList, TrendingUp, Bell } from 'lucide-react'
+import { ArrowRight, ShieldCheck, ClipboardList, TrendingUp, Bell } from 'lucide-react'
 import { useToast } from '@/hooks/use-toast'
 import { PasswordInput } from '@/components/ui/password-input'
 import { GoogleLogin } from '@react-oauth/google'
@@ -75,17 +75,21 @@ export default function Login() {
 
         {/* Logo */}
         <div className="flex items-center gap-3 relative z-10">
-          <div className="flex h-10 w-10 items-center justify-center rounded-md bg-white/10 backdrop-blur">
-            <GraduationCap className="h-5 w-5 text-brand-foreground" />
-          </div>
-          <span className="text-brand-foreground font-semibold text-lg tracking-tight">AUCA Attendance</span>
+          <img
+            src="/auca-logo.jpg"
+            alt="AUCA Innovation Center"
+            className="h-12 w-12 rounded-md object-cover ring-1 ring-white/30 shadow-sm"
+          />
+          <span className="text-brand-foreground font-semibold text-lg tracking-tight">
+            AUCA Attendance
+          </span>
         </div>
 
         {/* Center content */}
         <div className="relative z-10">
-          <h2 className="text-4xl font-semibold text-brand-foreground leading-tight mb-4">
+          <h2 className="font-display text-5xl font-medium text-brand-foreground leading-[1.1] tracking-tight mb-4">
             Attendance &amp; Marks<br />
-            <span className="text-white/70">Managed in one place.</span>
+            <span className="text-white/75">Managed in one place.</span>
           </h2>
           <p className="text-white/70 text-sm leading-relaxed mb-8 max-w-xs">
             Track attendance, record grades, and generate reports — all from a single dashboard built for AUCA.
@@ -106,18 +110,22 @@ export default function Login() {
           </div>
         </div>
 
-        <p className="text-xs text-white/60 relative z-10">
-          © {new Date().getFullYear()} Adventist University of Central Africa
-        </p>
+        <div className="text-xs text-white/65 relative z-10 flex items-center gap-2">
+          <span>© {new Date().getFullYear()} Adventist University of Central Africa</span>
+          <span className="text-white/40">·</span>
+          <span>Supported by Mastercard Foundation</span>
+        </div>
       </div>
 
       {/* ── Right form panel ── */}
       <div className="flex flex-1 flex-col items-center justify-center px-6 py-12 bg-background">
         {/* Mobile logo */}
         <div className="flex md:hidden items-center gap-2 mb-8">
-          <div className="flex h-9 w-9 items-center justify-center rounded-md bg-brand">
-            <GraduationCap className="h-4 w-4 text-brand-foreground" />
-          </div>
+          <img
+            src="/auca-logo.jpg"
+            alt="AUCA"
+            className="h-9 w-9 rounded-md object-cover ring-1 ring-border"
+          />
           <span className="font-semibold text-lg text-foreground">AUCA Attendance</span>
         </div>
 

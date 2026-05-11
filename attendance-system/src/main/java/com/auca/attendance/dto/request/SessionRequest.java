@@ -11,9 +11,12 @@ public class SessionRequest {
     @NotNull
     private LocalDate sessionDate;
 
-    @NotNull
+    /** Optional. Defaults to 18:00 server-side. */
     private LocalTime startTime;
 
+    /** Optional. Defaults to 21:00 server-side. */
     private LocalTime endTime;
+
+    /** Optional. Always EVENING — set automatically. */
     private String period;
 }

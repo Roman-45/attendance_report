@@ -9,8 +9,10 @@ import { Card, CardContent } from '@/components/ui/card'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
+import { Label } from '@/components/ui/label'
 import { useToast } from '@/hooks/use-toast'
-import { ChevronLeft, ChevronRight, Shield, Users, UserCheck, UserX, Search } from 'lucide-react'
+import { ChevronLeft, ChevronRight, Plus, Shield, Users, UserCheck, UserX, Search } from 'lucide-react'
 import { SkeletonRow } from '@/components/ui/skeleton'
 
 interface UserSummary {
@@ -42,10 +44,25 @@ function initials(name: string) {
   return name.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2)
 }
 
+interface CreateForm {
+  name: string
+  email: string
+  role: string
+  password: string
+}
+const EMPTY_CREATE: CreateForm = {
+  name: '',
+  email: '',
+  role: 'INSTRUCTOR',
+  password: '',
+}
+
 export default function UserManagement() {
   const [page, setPage] = useState(0)
   const [search, setSearch] = useState('')
   const [roleFilter, setRoleFilter] = useState<string>('ALL')
+  const [createOpen, setCreateOpen] = useState(false)
+  const [createForm, setCreateForm] = useState<CreateForm>(EMPTY_CREATE)
   const { user: currentUser } = useAuth()
   const { toast } = useToast()
   const queryClient = useQueryClient()
@@ -72,6 +89,29 @@ export default function UserManagement() {
     },
     onError: (err: unknown) => {
       const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message || 'Failed to update role'
+      toast({ variant: 'destructive', title: 'Error', description: msg })
+    },
+  })
+
+  const createMutation = useMutation({
+    mutationFn: (payload: CreateForm) => {
+      const body: Record<string, string> = {
+        name: payload.name,
+        email: payload.email,
+        role: payload.role,
+      }
+      if (payload.password.trim()) body.password = payload.password
+      return client.post('/admin/users', body)
+    },
+    onSuccess: (resp) => {
+      queryClient.invalidateQueries({ queryKey: ['admin-users'] })
+      setCreateOpen(false)
+      setCreateForm(EMPTY_CREATE)
+      const msg = resp?.data?.message ?? 'User created'
+      toast({ title: msg })
+    },
+    onError: (err: unknown) => {
+      const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message || 'Failed to create user'
       toast({ variant: 'destructive', title: 'Error', description: msg })
     },
   })
@@ -116,9 +156,14 @@ export default function UserManagement() {
             {totalElements > 0 ? `${totalElements} total accounts` : 'Manage user roles and access'}
           </p>
         </div>
-        <div className="flex items-center gap-2 text-sm text-[#64748B]">
-          <Shield className="h-4 w-4" />
-          Admin only
+        <div className="flex items-center gap-3">
+          <Button onClick={() => { setCreateForm(EMPTY_CREATE); setCreateOpen(true) }} className="gap-2">
+            <Plus className="h-4 w-4" /> New user
+          </Button>
+          <div className="hidden sm:flex items-center gap-2 text-sm text-muted-foreground">
+            <Shield className="h-4 w-4" />
+            Admin only
+          </div>
         </div>
       </div>
 
@@ -259,6 +304,72 @@ export default function UserManagement() {
           </Table>
         </CardContent>
       </Card>
+
+      <Dialog open={createOpen} onOpenChange={setCreateOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Create user</DialogTitle>
+          </DialogHeader>
+          <form
+            onSubmit={(e) => { e.preventDefault(); createMutation.mutate(createForm) }}
+            className="space-y-4"
+          >
+            <div className="space-y-1.5">
+              <Label htmlFor="cu-name">Full name</Label>
+              <Input
+                id="cu-name"
+                value={createForm.name}
+                onChange={(e) => setCreateForm(f => ({ ...f, name: e.target.value }))}
+                required
+                placeholder="Jane Doe"
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="cu-email">Email</Label>
+              <Input
+                id="cu-email"
+                type="email"
+                value={createForm.email}
+                onChange={(e) => setCreateForm(f => ({ ...f, email: e.target.value }))}
+                required
+                placeholder="jane@auca.ac.rw"
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label>Role</Label>
+              <Select value={createForm.role} onValueChange={(v) => setCreateForm(f => ({ ...f, role: v }))}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {ROLES.map(r => (
+                    <SelectItem key={r} value={r}>{formatRoleName(r)}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="cu-pw">Password (optional)</Label>
+              <Input
+                id="cu-pw"
+                type="password"
+                value={createForm.password}
+                onChange={(e) => setCreateForm(f => ({ ...f, password: e.target.value }))}
+                placeholder="Leave blank to email a temporary password"
+              />
+              <p className="text-[11px] text-muted-foreground">
+                If blank, the server generates a random temporary password and emails it.
+              </p>
+            </div>
+            <DialogFooter>
+              <Button type="button" variant="outline" onClick={() => setCreateOpen(false)}>Cancel</Button>
+              <Button type="submit" disabled={createMutation.isPending}>
+                {createMutation.isPending ? 'Creating…' : 'Create user'}
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
 
       {totalPages > 1 && (
         <div className="flex items-center justify-center gap-1">

@@ -5,18 +5,21 @@ import lombok.Data;
 
 @Data
 public class StudentRequest {
-    @NotBlank
+    /** Optional. Auto-generated as AUCA{YY}-{seq} when blank. */
     private String studentId;
 
     @NotBlank
     private String name;
 
-    @Email @NotBlank
+    /** Optional. Service rejects duplicates only when set. */
+    @Email
     private String email;
 
-    @NotNull @Min(2000)
+    /** Optional. Defaults to the current academic year. */
+    @Min(2000)
     private Integer cohortYear;
 
+    /** The program / department the student belongs to (e.g., "Computer Science"). */
     private String program;
     private String phone;
 

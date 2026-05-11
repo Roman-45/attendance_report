@@ -17,10 +17,6 @@ public class ClassroomLayout {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @OneToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "module_id", nullable = false, unique = true)
-    private Module module;
-
     @Column(name = "total_rows", nullable = false)
     private Integer totalRows;
 

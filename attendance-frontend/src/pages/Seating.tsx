@@ -1,159 +1,221 @@
+// School-wide classroom seating. The layout is shared across all modules —
+// a student sits in the same seat regardless of the class running that
+// evening. Per the user requirement: "the layout of the class is always
+// the same regardless of the module".
 import { useState, useMemo } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import client from '@/api/client'
-import type { Module, ClassroomLayout, SeatAssignment } from '@/types'
+import type { ClassroomLayout, SeatAssignment } from '@/types'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card'
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from '@/components/ui/dialog'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
 import { useToast } from '@/hooks/use-toast'
-import { Grid3X3, Plus, Trash2, UserPlus, Send, AlertTriangle, X } from 'lucide-react'
+import {
+  Grid3X3,
+  Plus,
+  Trash2,
+  UserPlus,
+  Send,
+  AlertTriangle,
+  X,
+} from 'lucide-react'
 import { SeatingGrid } from '@/components/SeatingGrid'
 import { cn } from '@/lib/utils'
 
-interface EnrolledStudent {
-  studentId: number
-  studentName: string
-  studentStudentId: string
+interface StudentLite {
+  id: number
+  name: string
 }
 
 interface PendingAssignment {
   studentId: number
   studentName: string
-  studentStudentId: string
   row: number
   col: number
 }
 
 export default function Seating() {
-  const [selectedModuleId, setSelectedModuleId] = useState<string>('')
   const [layoutDialogOpen, setLayoutDialogOpen] = useState(false)
-  const [layoutForm, setLayoutForm] = useState({ rows: '7', cols: '8', groups: '2' })
+  const [layoutForm, setLayoutForm] = useState({
+    rows: '7',
+    cols: '8',
+    groups: '2',
+  })
   const [assignOpen, setAssignOpen] = useState(false)
-  const [selectedSeat, setSelectedSeat] = useState<{ row: number; col: number } | null>(null)
+  const [selectedSeat, setSelectedSeat] = useState<{
+    row: number
+    col: number
+  } | null>(null)
   const [selectedStudentId, setSelectedStudentId] = useState<string>('')
   const [infoOpen, setInfoOpen] = useState(false)
-  const [selectedAssignment, setSelectedAssignment] = useState<SeatAssignment | null>(null)
-  const [pendingAssignments, setPendingAssignments] = useState<PendingAssignment[]>([])
+  const [selectedAssignment, setSelectedAssignment] =
+    useState<SeatAssignment | null>(null)
+  const [pendingAssignments, setPendingAssignments] = useState<
+    PendingAssignment[]
+  >([])
   const queryClient = useQueryClient()
   const { toast } = useToast()
 
-  const { data: modules = [] } = useQuery({
-    queryKey: ['modules'],
-    queryFn: () => client.get('/modules').then(r => r.data.data),
-  })
-
-  const { data: layout, isLoading: layoutLoading, isError: layoutError } = useQuery<ClassroomLayout>({
-    queryKey: ['seating-layout', selectedModuleId],
-    queryFn: () => client.get(`/modules/${selectedModuleId}/seating/layout`).then(r => r.data.data),
-    enabled: !!selectedModuleId,
+  const {
+    data: layout,
+    isLoading: layoutLoading,
+  } = useQuery<ClassroomLayout>({
+    queryKey: ['seating-layout'],
+    queryFn: () => client.get('/seating/layout').then((r) => r.data.data),
     retry: false,
   })
 
-  const { data: enrolledStudents = [] } = useQuery<EnrolledStudent[]>({
-    queryKey: ['enrollments-for-seating', selectedModuleId],
-    queryFn: () => client.get(`/modules/${selectedModuleId}/enrollments`).then(r => r.data.data),
-    enabled: !!selectedModuleId,
+  const { data: students = [] } = useQuery<StudentLite[]>({
+    queryKey: ['students-for-seating'],
+    queryFn: () =>
+      client
+        .get('/students')
+        .then((r) =>
+          (r.data.data as Array<{ id: number; name: string }>).map((s) => ({
+            id: s.id,
+            name: s.name,
+          })),
+        ),
   })
 
   const createLayoutMutation = useMutation({
-    mutationFn: () => client.post(`/modules/${selectedModuleId}/seating/layout`, {
-      totalRows: Number(layoutForm.rows),
-      columnsPerRow: Number(layoutForm.cols),
-      columnGroups: Number(layoutForm.groups),
-    }),
+    mutationFn: () =>
+      client.post('/seating/layout', {
+        totalRows: Number(layoutForm.rows),
+        columnsPerRow: Number(layoutForm.cols),
+        columnGroups: Number(layoutForm.groups),
+      }),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['seating-layout', selectedModuleId] })
+      queryClient.invalidateQueries({ queryKey: ['seating-layout'] })
       setLayoutDialogOpen(false)
-      toast({ title: 'Classroom layout created' })
+      toast({ title: 'Classroom layout saved' })
     },
     onError: (err: unknown) => {
-      const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message || 'Failed'
+      const msg =
+        (err as { response?: { data?: { message?: string } } })?.response?.data
+          ?.message || 'Failed'
       toast({ variant: 'destructive', title: 'Error', description: msg })
     },
   })
 
   const assignMutation = useMutation({
-    mutationFn: () => client.post(`/modules/${selectedModuleId}/seating/assign`, {
-      studentId: Number(selectedStudentId),
-      rowNumber: selectedSeat!.row,
-      columnNumber: selectedSeat!.col,
-    }),
+    mutationFn: () =>
+      client.post('/seating/assign', {
+        studentId: Number(selectedStudentId),
+        rowNumber: selectedSeat!.row,
+        columnNumber: selectedSeat!.col,
+      }),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['seating-layout', selectedModuleId] })
+      queryClient.invalidateQueries({ queryKey: ['seating-layout'] })
       setAssignOpen(false)
       toast({ title: 'Seat assigned' })
     },
     onError: (err: unknown) => {
-      const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message || 'Failed'
+      const msg =
+        (err as { response?: { data?: { message?: string } } })?.response?.data
+          ?.message || 'Failed'
       toast({ variant: 'destructive', title: 'Error', description: msg })
     },
   })
 
   const bulkAssignMutation = useMutation({
-    mutationFn: () => client.post(`/modules/${selectedModuleId}/seating/assign/bulk`, {
-      assignments: pendingAssignments.map(p => ({
-        studentId: p.studentId,
-        rowNumber: p.row,
-        columnNumber: p.col,
-      })),
-    }),
+    mutationFn: () =>
+      client.post('/seating/assign/bulk', {
+        assignments: pendingAssignments.map((p) => ({
+          studentId: p.studentId,
+          rowNumber: p.row,
+          columnNumber: p.col,
+        })),
+      }),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['seating-layout', selectedModuleId] })
+      queryClient.invalidateQueries({ queryKey: ['seating-layout'] })
       setPendingAssignments([])
       toast({ title: `${pendingAssignments.length} seat(s) assigned` })
     },
     onError: (err: unknown) => {
-      const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message || 'Failed'
-      toast({ variant: 'destructive', title: 'Bulk assignment failed', description: msg })
+      const msg =
+        (err as { response?: { data?: { message?: string } } })?.response?.data
+          ?.message || 'Failed'
+      toast({
+        variant: 'destructive',
+        title: 'Bulk assignment failed',
+        description: msg,
+      })
     },
   })
 
   const unassignMutation = useMutation({
     mutationFn: (studentId: number) =>
-      client.delete(`/modules/${selectedModuleId}/seating/assign/${studentId}`),
+      client.delete(`/seating/assign/${studentId}`),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['seating-layout', selectedModuleId] })
+      queryClient.invalidateQueries({ queryKey: ['seating-layout'] })
       setInfoOpen(false)
       toast({ title: 'Seat unassigned' })
     },
     onError: (err: unknown) => {
-      const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message || 'Failed'
+      const msg =
+        (err as { response?: { data?: { message?: string } } })?.response?.data
+          ?.message || 'Failed'
       toast({ variant: 'destructive', title: 'Error', description: msg })
     },
   })
 
   const assignedStudentIds = useMemo(
-    () => new Set(layout?.seats.map(s => s.studentId) || []),
+    () => new Set(layout?.seats.map((s) => s.studentId) || []),
     [layout],
   )
   const pendingStudentIds = useMemo(
-    () => new Set(pendingAssignments.map(p => p.studentId)),
+    () => new Set(pendingAssignments.map((p) => p.studentId)),
     [pendingAssignments],
   )
   const pendingSeatKeys = useMemo(
-    () => new Set(pendingAssignments.map(p => `${p.row}-${p.col}`)),
+    () => new Set(pendingAssignments.map((p) => `${p.row}-${p.col}`)),
     [pendingAssignments],
   )
 
   const unassignedStudents = useMemo(
-    () => enrolledStudents.filter(
-      s => !assignedStudentIds.has(s.studentId) && !pendingStudentIds.has(s.studentId),
-    ),
-    [enrolledStudents, assignedStudentIds, pendingStudentIds],
+    () =>
+      students.filter(
+        (s) =>
+          !assignedStudentIds.has(s.id) && !pendingStudentIds.has(s.id),
+      ),
+    [students, assignedStudentIds, pendingStudentIds],
   )
 
-  const handleSeatClick = (row: number, col: number, assignment?: SeatAssignment) => {
+  const handleSeatClick = (
+    row: number,
+    col: number,
+    assignment?: SeatAssignment,
+  ) => {
     if (assignment) {
       setSelectedAssignment(assignment)
       setInfoOpen(true)
       return
     }
     if (pendingSeatKeys.has(`${row}-${col}`)) {
-      // Already pending — remove from pending
-      setPendingAssignments(prev => prev.filter(p => !(p.row === row && p.col === col)))
+      setPendingAssignments((prev) =>
+        prev.filter((p) => !(p.row === row && p.col === col)),
+      )
       return
     }
     setSelectedSeat({ row, col })
@@ -161,17 +223,15 @@ export default function Seating() {
     setAssignOpen(true)
   }
 
-  // Add the chosen student to the pending stack
   const queueAssignment = () => {
     if (!selectedStudentId || !selectedSeat) return
-    const stu = enrolledStudents.find(s => s.studentId === Number(selectedStudentId))
+    const stu = students.find((s) => s.id === Number(selectedStudentId))
     if (!stu) return
-    setPendingAssignments(prev => [
+    setPendingAssignments((prev) => [
       ...prev,
       {
-        studentId: stu.studentId,
-        studentName: stu.studentName,
-        studentStudentId: stu.studentStudentId,
+        studentId: stu.id,
+        studentName: stu.name,
         row: selectedSeat.row,
         col: selectedSeat.col,
       },
@@ -179,14 +239,13 @@ export default function Seating() {
     setAssignOpen(false)
   }
 
-  // Bridge the SeatingGrid: include pending assignments visually as virtual SeatAssignments
   const layoutWithPending: ClassroomLayout | undefined = useMemo(() => {
     if (!layout) return undefined
-    const virtualSeats: SeatAssignment[] = pendingAssignments.map(p => ({
-      id: -p.studentId, // negative — unique placeholder
+    const virtualSeats: SeatAssignment[] = pendingAssignments.map((p) => ({
+      id: -p.studentId,
       studentId: p.studentId,
       studentName: `${p.studentName} (pending)`,
-      registrationNumber: p.studentStudentId,
+      registrationNumber: '',
       rowNumber: p.row,
       columnNumber: p.col,
       assignedByName: null,
@@ -195,99 +254,109 @@ export default function Seating() {
     return { ...layout, seats: [...layout.seats, ...virtualSeats] }
   }, [layout, pendingAssignments])
 
+  const isEmpty = !layoutLoading && (!layout || layout.totalRows === 0)
+
   return (
     <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+      <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-3">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight text-[#0F172A] dark:text-[#F1F5F9]">
-            Classroom Seating
-          </h1>
-          <p className="text-[#64748B] dark:text-[#94A3B8] text-sm mt-1">
-            Arrange where students sit. Click a seat to assign a student.
+          <h1>Classroom Seating</h1>
+          <p className="text-sm text-muted-foreground mt-1">
+            One shared seating chart for the whole school. A student sits in
+            the same seat regardless of which module is running.
           </p>
         </div>
+        {layout && (
+          <Button
+            variant="outline"
+            onClick={() => {
+              setLayoutForm({
+                rows: String(layout.totalRows),
+                cols: String(layout.columnsPerRow),
+                groups: String(layout.columnGroups),
+              })
+              setLayoutDialogOpen(true)
+            }}
+            className="gap-2"
+          >
+            <Grid3X3 className="h-4 w-4" />
+            Edit layout
+          </Button>
+        )}
       </div>
 
-      <div className="max-w-sm">
-        <Label className="text-[#334155] dark:text-[#94A3B8]">Select Module</Label>
-        <Select value={selectedModuleId} onValueChange={(v) => { setSelectedModuleId(v); setPendingAssignments([]) }}>
-          <SelectTrigger className="border-[#E2E8F0] dark:border-[#1E3A5F] text-[#334155] dark:text-[#94A3B8]">
-            <SelectValue placeholder="Choose a module" />
-          </SelectTrigger>
-          <SelectContent>
-            {modules.map((m: Module) => (
-              <SelectItem key={m.id} value={String(m.id)}>{m.code} - {m.name}</SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </div>
-
-      {/* Loading skeleton */}
-      {selectedModuleId && layoutLoading && (
-        <Card className="border-[#E2E8F0] dark:border-[#1E3A5F]">
+      {layoutLoading && (
+        <Card>
           <CardContent className="py-12 flex items-center justify-center">
-            <span className="h-6 w-6 rounded-full border-2 border-[#4F46E5]/30 border-t-[#4F46E5] animate-spin" />
+            <span className="h-6 w-6 rounded-full border-2 border-brand/30 border-t-brand animate-spin" />
           </CardContent>
         </Card>
       )}
 
-      {/* No layout — empty state with creation dialog trigger */}
-      {selectedModuleId && layoutError && !layoutLoading && (
-        <Card className="border-[#E2E8F0] dark:border-[#1E3A5F] bg-[#FFFFFF] dark:bg-[#111827]">
+      {isEmpty && (
+        <Card>
           <CardContent className="py-12 text-center">
-            <Grid3X3 className="h-10 w-10 mx-auto mb-3 text-[#94A3B8]" />
-            <p className="text-[#64748B] dark:text-[#94A3B8] mb-4">
-              No classroom layout exists for this module yet
+            <Grid3X3 className="h-10 w-10 mx-auto mb-3 text-muted-foreground" />
+            <p className="text-muted-foreground mb-4">
+              No classroom layout has been defined yet.
             </p>
             <Button
-              onClick={() => { setLayoutForm({ rows: '7', cols: '8', groups: '2' }); setLayoutDialogOpen(true) }}
-              className="bg-[#4F46E5] hover:bg-[#4338CA] text-white"
+              onClick={() => {
+                setLayoutForm({ rows: '7', cols: '8', groups: '2' })
+                setLayoutDialogOpen(true)
+              }}
+              className="gap-2"
             >
-              <Plus className="h-4 w-4 mr-2" /> Create Layout
+              <Plus className="h-4 w-4" /> Create layout
             </Button>
           </CardContent>
         </Card>
       )}
 
-      {/* Loaded layout */}
-      {layout && layoutWithPending && (
+      {layout && layoutWithPending && layout.totalRows > 0 && (
         <div className="grid lg:grid-cols-[1fr_280px] gap-4">
-          <Card className="border-[#E2E8F0] dark:border-[#1E3A5F] bg-[#FFFFFF] dark:bg-[#111827]">
+          <Card>
             <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-[#0F172A] dark:text-[#F1F5F9]">
-                <Grid3X3 className="h-5 w-5 text-[#4F46E5]" />
-                Seating Map — {layout.moduleName}
-                <span className="text-sm font-normal text-[#64748B] dark:text-[#94A3B8] ml-auto">
-                  {layout.seats.length} / {layout.totalRows * layout.columnsPerRow} seats assigned
+              <CardTitle className="flex items-center gap-2">
+                <Grid3X3 className="h-5 w-5 text-brand" />
+                Seating Map
+                <span className="text-sm font-normal text-muted-foreground ml-auto">
+                  {layout.seats.length} /{' '}
+                  {layout.totalRows * layout.columnsPerRow} seats assigned
                 </span>
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <SeatingGrid layout={layoutWithPending} onSeatClick={handleSeatClick} />
+              <SeatingGrid
+                layout={layoutWithPending}
+                onSeatClick={handleSeatClick}
+              />
             </CardContent>
           </Card>
 
-          {/* Side panel: unassigned students + pending bulk */}
           <div className="space-y-4">
-            <Card className="border-[#E2E8F0] dark:border-[#1E3A5F]">
+            <Card>
               <CardHeader className="pb-2">
-                <CardTitle className="text-sm flex items-center gap-2 text-[#0F172A] dark:text-[#F1F5F9]">
-                  <UserPlus className="h-4 w-4 text-[#4F46E5]" />
+                <CardTitle className="text-sm flex items-center gap-2">
+                  <UserPlus className="h-4 w-4 text-brand" />
                   Unassigned ({unassignedStudents.length})
                 </CardTitle>
               </CardHeader>
               <CardContent className="px-3 pb-3">
                 {unassignedStudents.length === 0 ? (
-                  <p className="text-xs text-[#94A3B8] py-2 px-1">All students seated.</p>
+                  <p className="text-xs text-muted-foreground py-2 px-1">
+                    All students seated.
+                  </p>
                 ) : (
                   <ul className="max-h-64 overflow-auto space-y-1">
-                    {unassignedStudents.map(s => (
+                    {unassignedStudents.map((s) => (
                       <li
-                        key={s.studentId}
-                        className="px-2 py-1.5 rounded-md border border-[#E2E8F0] dark:border-[#1E3A5F] text-xs text-[#334155] dark:text-[#94A3B8] bg-[#F8FAFC] dark:bg-[#1E293B]/40"
+                        key={s.id}
+                        className="px-2 py-1.5 rounded-md border border-border text-xs bg-surface-sunken"
                       >
-                        <p className="font-medium leading-tight text-[#0F172A] dark:text-[#F1F5F9]">{s.studentName}</p>
-                        <p className="text-[10px] text-[#64748B] dark:text-[#94A3B8]">{s.studentStudentId}</p>
+                        <p className="font-medium leading-tight text-foreground">
+                          {s.name}
+                        </p>
                       </li>
                     ))}
                   </ul>
@@ -296,30 +365,34 @@ export default function Seating() {
             </Card>
 
             {pendingAssignments.length > 0 && (
-              <Card className="border-[#FDE68A] dark:border-[#D97706]/40 bg-[#FFFBEB] dark:bg-[#D97706]/10">
+              <Card>
                 <CardHeader className="pb-2">
-                  <CardTitle className="text-sm flex items-center gap-2 text-[#92400E] dark:text-[#FDE68A]">
+                  <CardTitle className="text-sm flex items-center gap-2">
                     <Send className="h-4 w-4" />
                     Pending bulk ({pendingAssignments.length})
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="px-3 pb-3 space-y-2">
                   <ul className="max-h-48 overflow-auto space-y-1">
-                    {pendingAssignments.map(p => (
+                    {pendingAssignments.map((p) => (
                       <li
                         key={`${p.row}-${p.col}`}
-                        className="flex items-center gap-2 px-2 py-1.5 rounded-md bg-white dark:bg-[#1E293B] border border-[#FDE68A] dark:border-[#D97706]/40 text-xs"
+                        className="flex items-center gap-2 px-2 py-1.5 rounded-md bg-white border border-border text-xs"
                       >
-                        <span className="flex-1 truncate text-[#0F172A] dark:text-[#F1F5F9] font-medium">
+                        <span className="flex-1 truncate font-medium text-foreground">
                           {p.studentName}
                         </span>
-                        <span className="text-[10px] font-mono text-[#92400E] dark:text-[#FDE68A]">
+                        <span className="text-[10px] font-mono text-muted-foreground">
                           R{p.row}C{p.col}
                         </span>
                         <button
                           type="button"
-                          className="text-[#94A3B8] hover:text-[#DC2626]"
-                          onClick={() => setPendingAssignments(prev => prev.filter(x => x.studentId !== p.studentId))}
+                          className="text-muted-foreground hover:text-status-absent"
+                          onClick={() =>
+                            setPendingAssignments((prev) =>
+                              prev.filter((x) => x.studentId !== p.studentId),
+                            )
+                          }
                         >
                           <X className="h-3 w-3" />
                         </button>
@@ -328,7 +401,8 @@ export default function Seating() {
                   </ul>
                   <div className="flex gap-2">
                     <Button
-                      variant="outline" size="sm"
+                      variant="outline"
+                      size="sm"
                       className="flex-1"
                       onClick={() => setPendingAssignments([])}
                     >
@@ -336,7 +410,7 @@ export default function Seating() {
                     </Button>
                     <Button
                       size="sm"
-                      className="flex-1 bg-[#4F46E5] hover:bg-[#4338CA] text-white"
+                      className="flex-1"
                       onClick={() => bulkAssignMutation.mutate()}
                       disabled={bulkAssignMutation.isPending}
                     >
@@ -360,89 +434,116 @@ export default function Seating() {
         </div>
       )}
 
-      {/* Layout creation dialog */}
       <Dialog open={layoutDialogOpen} onOpenChange={setLayoutDialogOpen}>
-        <DialogContent className="bg-[#FFFFFF] dark:bg-[#111827] border-[#E2E8F0] dark:border-[#1E3A5F]">
+        <DialogContent>
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2 text-[#0F172A] dark:text-[#F1F5F9]">
-              <div className="w-8 h-8 rounded-lg bg-[#EEF2FF] dark:bg-[#4F46E5]/20 flex items-center justify-center">
-                <Grid3X3 className="h-4 w-4 text-[#4F46E5]" />
+            <DialogTitle className="flex items-center gap-2">
+              <div className="w-8 h-8 rounded-lg bg-brand-light flex items-center justify-center">
+                <Grid3X3 className="h-4 w-4 text-brand" />
               </div>
-              Create Classroom Layout
+              Classroom layout
             </DialogTitle>
           </DialogHeader>
-          <form onSubmit={(e) => { e.preventDefault(); createLayoutMutation.mutate() }} className="space-y-4">
+          <form
+            onSubmit={(e) => {
+              e.preventDefault()
+              createLayoutMutation.mutate()
+            }}
+            className="space-y-4"
+          >
             <div className="grid grid-cols-3 gap-3">
               <div className="space-y-2">
-                <Label className="text-[#334155] dark:text-[#94A3B8] text-xs">Rows</Label>
+                <Label className="text-xs">Rows</Label>
                 <Input
-                  type="number" min={1} max={30} required
+                  type="number"
+                  min={1}
+                  max={30}
+                  required
                   value={layoutForm.rows}
-                  onChange={(e) => setLayoutForm(f => ({ ...f, rows: e.target.value }))}
-                  className="border-[#E2E8F0] dark:border-[#1E3A5F]"
+                  onChange={(e) =>
+                    setLayoutForm((f) => ({ ...f, rows: e.target.value }))
+                  }
                 />
               </div>
               <div className="space-y-2">
-                <Label className="text-[#334155] dark:text-[#94A3B8] text-xs">Columns</Label>
+                <Label className="text-xs">Columns</Label>
                 <Input
-                  type="number" min={1} max={20} required
+                  type="number"
+                  min={1}
+                  max={20}
+                  required
                   value={layoutForm.cols}
-                  onChange={(e) => setLayoutForm(f => ({ ...f, cols: e.target.value }))}
-                  className="border-[#E2E8F0] dark:border-[#1E3A5F]"
+                  onChange={(e) =>
+                    setLayoutForm((f) => ({ ...f, cols: e.target.value }))
+                  }
                 />
               </div>
               <div className="space-y-2">
-                <Label className="text-[#334155] dark:text-[#94A3B8] text-xs" title="Number of column groups (e.g. 2 = a centre aisle)">Groups</Label>
+                <Label
+                  className="text-xs"
+                  title="Number of column groups (e.g. 2 = a centre aisle)"
+                >
+                  Groups
+                </Label>
                 <Input
-                  type="number" min={1} max={5} required
+                  type="number"
+                  min={1}
+                  max={5}
+                  required
                   value={layoutForm.groups}
-                  onChange={(e) => setLayoutForm(f => ({ ...f, groups: e.target.value }))}
-                  className="border-[#E2E8F0] dark:border-[#1E3A5F]"
+                  onChange={(e) =>
+                    setLayoutForm((f) => ({ ...f, groups: e.target.value }))
+                  }
                 />
               </div>
             </div>
-            <p className="text-[11px] text-[#64748B] dark:text-[#94A3B8] flex items-start gap-1.5">
+            <p className="text-[11px] text-muted-foreground flex items-start gap-1.5">
               <AlertTriangle className="h-3 w-3 mt-0.5 shrink-0" />
-              Total seats: <strong className="text-[#0F172A] dark:text-[#F1F5F9]">{Number(layoutForm.rows) * Number(layoutForm.cols)}</strong>.
-              Choose a size that fits the enrolled cohort.
+              Total seats:{' '}
+              <strong className="text-foreground">
+                {Number(layoutForm.rows) * Number(layoutForm.cols)}
+              </strong>
+              . Choose a size that fits the cohort.
             </p>
             <DialogFooter>
               <Button
                 type="submit"
                 disabled={createLayoutMutation.isPending}
-                className="bg-[#4F46E5] hover:bg-[#4338CA] text-white"
               >
-                {createLayoutMutation.isPending ? 'Creating...' : 'Create Layout'}
+                {createLayoutMutation.isPending ? 'Saving…' : 'Save layout'}
               </Button>
             </DialogFooter>
           </form>
         </DialogContent>
       </Dialog>
 
-      {/* Assign Seat Dialog */}
       <Dialog open={assignOpen} onOpenChange={setAssignOpen}>
-        <DialogContent className="bg-[#FFFFFF] dark:bg-[#111827] border-[#E2E8F0] dark:border-[#1E3A5F]">
+        <DialogContent>
           <DialogHeader>
-            <DialogTitle className="text-[#0F172A] dark:text-[#F1F5F9]">
+            <DialogTitle>
               Assign Seat — Row {selectedSeat?.row}, Col {selectedSeat?.col}
             </DialogTitle>
           </DialogHeader>
           <div className="space-y-3">
-            <Label className="text-[#334155] dark:text-[#94A3B8]">Select Student</Label>
-            <Select value={selectedStudentId} onValueChange={setSelectedStudentId}>
-              <SelectTrigger className="border-[#E2E8F0] dark:border-[#1E3A5F] text-[#334155] dark:text-[#94A3B8]">
+            <Label>Student</Label>
+            <Select
+              value={selectedStudentId}
+              onValueChange={setSelectedStudentId}
+            >
+              <SelectTrigger>
                 <SelectValue placeholder="Choose a student" />
               </SelectTrigger>
               <SelectContent>
-                {unassignedStudents.map(s => (
-                  <SelectItem key={s.studentId} value={String(s.studentId)}>
-                    {s.studentName} ({s.studentStudentId})
+                {unassignedStudents.map((s) => (
+                  <SelectItem key={s.id} value={String(s.id)}>
+                    {s.name}
                   </SelectItem>
                 ))}
               </SelectContent>
             </Select>
-            <p className="text-[11px] text-[#64748B] dark:text-[#94A3B8]">
-              Tip: choose <strong>Queue</strong> to batch several seats and commit them in one request.
+            <p className="text-[11px] text-muted-foreground">
+              Tip: choose <strong>Queue</strong> to batch several seats and
+              commit them in one request.
             </p>
           </div>
           <DialogFooter className="flex-col sm:flex-row gap-2 sm:gap-0">
@@ -450,19 +551,18 @@ export default function Seating() {
               variant="outline"
               onClick={queueAssignment}
               disabled={!selectedStudentId}
-              className={cn('border-[#E2E8F0] dark:border-[#1E3A5F]')}
+              className={cn('')}
             >
               <Plus className="h-4 w-4 mr-1" /> Queue
             </Button>
             <Button
               onClick={() => assignMutation.mutate()}
               disabled={!selectedStudentId || assignMutation.isPending}
-              className="bg-[#4F46E5] hover:bg-[#4338CA] text-white disabled:opacity-50"
             >
               {assignMutation.isPending ? (
                 <span className="flex items-center gap-2">
                   <span className="h-4 w-4 rounded-full border-2 border-white/30 border-t-white animate-spin" />
-                  Assigning...
+                  Assigning…
                 </span>
               ) : (
                 'Assign now'
@@ -472,32 +572,30 @@ export default function Seating() {
         </DialogContent>
       </Dialog>
 
-      {/* Seat Info Dialog */}
       <Dialog open={infoOpen} onOpenChange={setInfoOpen}>
-        <DialogContent className="bg-[#FFFFFF] dark:bg-[#111827] border-[#E2E8F0] dark:border-[#1E3A5F]">
+        <DialogContent>
           <DialogHeader>
-            <DialogTitle className="text-[#0F172A] dark:text-[#F1F5F9]">Seat Details</DialogTitle>
+            <DialogTitle>Seat Details</DialogTitle>
           </DialogHeader>
           {selectedAssignment && (
             <div className="space-y-3">
               <div>
-                <p className="text-sm text-[#64748B] dark:text-[#94A3B8]">Student</p>
-                <p className="font-medium text-[#0F172A] dark:text-[#F1F5F9]">{selectedAssignment.studentName}</p>
+                <p className="text-sm text-muted-foreground">Student</p>
+                <p className="font-medium text-foreground">
+                  {selectedAssignment.studentName}
+                </p>
               </div>
               <div>
-                <p className="text-sm text-[#64748B] dark:text-[#94A3B8]">Registration No.</p>
-                <p className="text-[#334155] dark:text-[#94A3B8]">{selectedAssignment.registrationNumber}</p>
-              </div>
-              <div>
-                <p className="text-sm text-[#64748B] dark:text-[#94A3B8]">Position</p>
-                <p className="text-[#334155] dark:text-[#94A3B8]">
-                  Row {selectedAssignment.rowNumber}, Column {selectedAssignment.columnNumber}
+                <p className="text-sm text-muted-foreground">Position</p>
+                <p>
+                  Row {selectedAssignment.rowNumber}, Column{' '}
+                  {selectedAssignment.columnNumber}
                 </p>
               </div>
               {selectedAssignment.assignedByName && (
                 <div>
-                  <p className="text-sm text-[#64748B] dark:text-[#94A3B8]">Assigned By</p>
-                  <p className="text-[#334155] dark:text-[#94A3B8]">{selectedAssignment.assignedByName}</p>
+                  <p className="text-sm text-muted-foreground">Assigned By</p>
+                  <p>{selectedAssignment.assignedByName}</p>
                 </div>
               )}
             </div>
@@ -505,14 +603,19 @@ export default function Seating() {
           <DialogFooter>
             <Button
               variant="destructive"
-              onClick={() => selectedAssignment && unassignMutation.mutate(selectedAssignment.studentId)}
-              disabled={unassignMutation.isPending || (selectedAssignment?.id ?? 0) < 0}
-              className="bg-[#DC2626] hover:bg-[#DC2626]/90 text-white disabled:opacity-50"
+              onClick={() =>
+                selectedAssignment &&
+                unassignMutation.mutate(selectedAssignment.studentId)
+              }
+              disabled={
+                unassignMutation.isPending ||
+                (selectedAssignment?.id ?? 0) < 0
+              }
             >
               {unassignMutation.isPending ? (
                 <span className="flex items-center gap-2">
                   <span className="h-4 w-4 rounded-full border-2 border-white/30 border-t-white animate-spin" />
-                  Unassigning...
+                  Unassigning…
                 </span>
               ) : (
                 <span className="flex items-center gap-2">

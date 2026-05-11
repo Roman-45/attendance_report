@@ -96,18 +96,14 @@ export function EnrollmentDialog({ moduleId, moduleName, open, onOpenChange }: P
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead>Student ID</TableHead>
                       <TableHead>Name</TableHead>
-                      <TableHead>Program</TableHead>
                       <TableHead className="w-16"></TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {(enrollments as Enrollment[]).map((e) => (
                       <TableRow key={e.enrollmentId}>
-                        <TableCell className="font-mono text-xs">{e.studentStudentId}</TableCell>
                         <TableCell>{e.studentName}</TableCell>
-                        <TableCell className="text-[#64748B] dark:text-[#94A3B8] text-xs">{e.program}</TableCell>
                         <TableCell>
                           <Button
                             variant="ghost"
@@ -149,9 +145,7 @@ export function EnrollmentDialog({ moduleId, moduleName, open, onOpenChange }: P
                   <TableHeader>
                     <TableRow>
                       <TableHead className="w-10"></TableHead>
-                      <TableHead>Student ID</TableHead>
                       <TableHead>Name</TableHead>
-                      <TableHead>Program</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -169,9 +163,7 @@ export function EnrollmentDialog({ moduleId, moduleName, open, onOpenChange }: P
                             className="h-4 w-4 accent-[#4F46E5]"
                           />
                         </TableCell>
-                        <TableCell className="font-mono text-xs">{s.studentId}</TableCell>
                         <TableCell>{s.name}</TableCell>
-                        <TableCell className="text-[#64748B] dark:text-[#94A3B8] text-xs">{s.program}</TableCell>
                       </TableRow>
                     ))}
                   </TableBody>

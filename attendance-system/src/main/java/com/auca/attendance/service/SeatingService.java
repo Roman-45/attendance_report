@@ -6,14 +6,12 @@ import com.auca.attendance.dto.request.SeatAssignmentRequest;
 import com.auca.attendance.dto.response.ClassroomLayoutResponse;
 import com.auca.attendance.dto.response.SeatAssignmentResponse;
 import com.auca.attendance.entity.ClassroomLayout;
-import com.auca.attendance.entity.Module;
 import com.auca.attendance.entity.SeatAssignment;
 import com.auca.attendance.entity.Student;
 import com.auca.attendance.entity.User;
 import com.auca.attendance.enums.Role;
 import com.auca.attendance.exception.ResourceNotFoundException;
 import com.auca.attendance.repository.ClassroomLayoutRepository;
-import com.auca.attendance.repository.ModuleRepository;
 import com.auca.attendance.repository.SeatAssignmentRepository;
 import com.auca.attendance.repository.StudentRepository;
 import com.auca.attendance.repository.TeamMemberRepository;
@@ -25,66 +23,157 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * Manages the school-wide classroom layout and per-student seat assignments.
+ * The layout is a singleton: there is exactly one row in {@code classroom_layouts}
+ * regardless of module. {@code moduleId} arguments are kept on the legacy
+ * per-module endpoints for permission checks (team-leader scoping) but never
+ * influence which layout/seat is read or written.
+ */
 @Service
 @RequiredArgsConstructor
 public class SeatingService {
 
+    /**
+     * AUCA evening-class classroom: 8 desks per row, split into 2 groups by a
+     * centre aisle (4 desks either side), 7 rows deep — 56 seats, sized for
+     * a cohort capped at 50 students. Admins can override via
+     * POST /api/v1/seating/layout.
+     */
+    private static final int DEFAULT_ROWS    = 7;
+    private static final int DEFAULT_COLS    = 8;
+    private static final int DEFAULT_GROUPS  = 2;
+
     private final ClassroomLayoutRepository layoutRepo;
-    private final SeatAssignmentRepository seatRepo;
-    private final ModuleRepository moduleRepo;
-    private final StudentRepository studentRepo;
-    private final TeamService teamService;
-    private final TeamMemberRepository teamMemberRepo;
+    private final SeatAssignmentRepository  seatRepo;
+    private final StudentRepository         studentRepo;
+    private final TeamService               teamService;
+    private final TeamMemberRepository      teamMemberRepo;
+
+    // ─── Layout (singleton) ──────────────────────────────────────────────────
+
+    @Transactional
+    public ClassroomLayoutResponse createOrUpdateLayout(ClassroomLayoutRequest request) {
+        ClassroomLayout layout = layoutRepo.findFirstByOrderByIdAsc()
+                .orElseGet(() -> ClassroomLayout.builder()
+                        .totalRows(request.getTotalRows())
+                        .columnsPerRow(request.getColumnsPerRow())
+                        .columnGroups(request.getColumnGroups())
+                        .build());
+
+        layout.setTotalRows(request.getTotalRows());
+        layout.setColumnsPerRow(request.getColumnsPerRow());
+        layout.setColumnGroups(request.getColumnGroups());
+        return toLayoutResponse(layoutRepo.save(layout));
+    }
+
+    @Transactional
+    public ClassroomLayoutResponse getLayout() {
+        return toLayoutResponse(getOrCreateSingleton());
+    }
+
+    // ─── Seats ───────────────────────────────────────────────────────────────
+
+    @Transactional
+    public SeatAssignmentResponse assignSeat(SeatAssignmentRequest request, User currentUser) {
+        ClassroomLayout layout = getOrCreateSingleton();
+        checkSeatPermission(request.getStudentId(), currentUser);
+        return doAssign(layout, request, currentUser);
+    }
+
+    @Transactional
+    public List<SeatAssignmentResponse> bulkAssignSeats(BulkSeatAssignmentRequest request, User currentUser) {
+        List<SeatAssignmentResponse> results = new ArrayList<>();
+        for (SeatAssignmentRequest single : request.getAssignments()) {
+            results.add(assignSeat(single, currentUser));
+        }
+        return results;
+    }
+
+    @Transactional
+    public void unassignSeat(Long studentId) {
+        ClassroomLayout layout = getOrCreateSingleton();
+        SeatAssignment seat = seatRepo.findByLayoutIdAndStudentId(layout.getId(), studentId)
+                .orElseThrow(() -> new ResourceNotFoundException("No seat found for this student"));
+        seatRepo.delete(seat);
+    }
+
+    @Transactional(readOnly = true)
+    public SeatAssignmentResponse getMySeat(User currentUser) {
+        Student student = studentRepo.findByAccountId(currentUser.getId())
+                .orElseThrow(() -> new ResourceNotFoundException("No student profile linked to this account"));
+        ClassroomLayout layout = layoutRepo.findFirstByOrderByIdAsc().orElse(null);
+        if (layout == null) return null;
+        return seatRepo.findByLayoutIdAndStudentId(layout.getId(), student.getId())
+                .map(this::toSeatResponse)
+                .orElse(null);
+    }
+
+    // ─── Legacy per-module endpoints (keep working for team-leader flow) ─────
+    // moduleId is used only for permission scoping; the layout/seat is global.
 
     @Transactional
     public ClassroomLayoutResponse createOrUpdateLayout(Long moduleId, ClassroomLayoutRequest request) {
-        Module module = moduleRepo.findById(moduleId)
-                .orElseThrow(() -> new ResourceNotFoundException("Module not found"));
-
-        ClassroomLayout layout = layoutRepo.findByModuleId(moduleId).orElse(null);
-        if (layout == null) {
-            layout = ClassroomLayout.builder()
-                    .module(module)
-                    .totalRows(request.getTotalRows())
-                    .columnsPerRow(request.getColumnsPerRow())
-                    .columnGroups(request.getColumnGroups())
-                    .build();
-        } else {
-            layout.setTotalRows(request.getTotalRows());
-            layout.setColumnsPerRow(request.getColumnsPerRow());
-            layout.setColumnGroups(request.getColumnGroups());
-        }
-
-        layout = layoutRepo.save(layout);
-        return toLayoutResponse(layout);
+        return createOrUpdateLayout(request);
     }
 
     @Transactional(readOnly = true)
     public ClassroomLayoutResponse getLayout(Long moduleId) {
-        ClassroomLayout layout = layoutRepo.findByModuleId(moduleId)
-                .orElseThrow(() -> new ResourceNotFoundException("No classroom layout for this module"));
-        return toLayoutResponse(layout);
+        return getLayout();
     }
 
     @Transactional
     public SeatAssignmentResponse assignSeat(Long moduleId, SeatAssignmentRequest request, User currentUser) {
-        checkSeatPermission(moduleId, request.getStudentId(), currentUser);
+        ClassroomLayout layout = getOrCreateSingleton();
+        checkSeatPermissionPerModule(moduleId, request.getStudentId(), currentUser);
+        return doAssign(layout, request, currentUser);
+    }
 
-        ClassroomLayout layout = layoutRepo.findByModuleId(moduleId)
-                .orElseThrow(() -> new ResourceNotFoundException("No classroom layout for this module"));
+    @Transactional
+    public List<SeatAssignmentResponse> bulkAssignSeats(Long moduleId, BulkSeatAssignmentRequest request, User currentUser) {
+        List<SeatAssignmentResponse> results = new ArrayList<>();
+        for (SeatAssignmentRequest single : request.getAssignments()) {
+            results.add(assignSeat(moduleId, single, currentUser));
+        }
+        return results;
+    }
 
-        // Validate seat position is within bounds
+    @Transactional
+    public void unassignSeat(Long moduleId, Long studentId) {
+        unassignSeat(studentId);
+    }
+
+    @Transactional(readOnly = true)
+    public SeatAssignmentResponse getMySeat(Long moduleId, User currentUser) {
+        return getMySeat(currentUser);
+    }
+
+    // ─── Internals ───────────────────────────────────────────────────────────
+
+    private ClassroomLayout getOrCreateSingleton() {
+        return layoutRepo.findFirstByOrderByIdAsc().orElseGet(() ->
+                layoutRepo.save(ClassroomLayout.builder()
+                        .totalRows(DEFAULT_ROWS)
+                        .columnsPerRow(DEFAULT_COLS)
+                        .columnGroups(DEFAULT_GROUPS)
+                        .build()));
+    }
+
+    private SeatAssignmentResponse doAssign(
+            ClassroomLayout layout,
+            SeatAssignmentRequest request,
+            User currentUser) {
+
         if (request.getRowNumber() < 1 || request.getRowNumber() > layout.getTotalRows()
                 || request.getColumnNumber() < 1 || request.getColumnNumber() > layout.getColumnsPerRow()) {
             throw new IllegalArgumentException("Seat position is out of bounds");
         }
 
-        // Check seat is not already taken
-        if (seatRepo.existsByLayoutIdAndRowNumberAndColumnNumber(layout.getId(), request.getRowNumber(), request.getColumnNumber())) {
+        if (seatRepo.existsByLayoutIdAndRowNumberAndColumnNumber(
+                layout.getId(), request.getRowNumber(), request.getColumnNumber())) {
             throw new IllegalArgumentException("This seat is already taken");
         }
 
-        // Check student doesn't already have a seat
         if (seatRepo.existsByLayoutIdAndStudentId(layout.getId(), request.getStudentId())) {
             throw new IllegalArgumentException("This student already has a seat assigned");
         }
@@ -108,45 +197,22 @@ public class SeatingService {
         return toSeatResponse(seatRepo.save(seat));
     }
 
-    @Transactional
-    public List<SeatAssignmentResponse> bulkAssignSeats(Long moduleId, BulkSeatAssignmentRequest request, User currentUser) {
-        List<SeatAssignmentResponse> results = new ArrayList<>();
-        for (SeatAssignmentRequest single : request.getAssignments()) {
-            results.add(assignSeat(moduleId, single, currentUser));
+    private void checkSeatPermission(Long targetStudentId, User currentUser) {
+        // Global seating: only ADMIN/FACILITATOR can assign.
+        if (currentUser.getRole() != Role.ADMIN && currentUser.getRole() != Role.FACILITATOR) {
+            throw new AccessDeniedException("Only admins or facilitators can assign global seats");
         }
-        return results;
     }
 
-    @Transactional
-    public void unassignSeat(Long moduleId, Long studentId) {
-        ClassroomLayout layout = layoutRepo.findByModuleId(moduleId)
-                .orElseThrow(() -> new ResourceNotFoundException("No classroom layout for this module"));
-        SeatAssignment seat = seatRepo.findByLayoutIdAndStudentId(layout.getId(), studentId)
-                .orElseThrow(() -> new ResourceNotFoundException("No seat found for this student"));
-        seatRepo.delete(seat);
-    }
-
-    @Transactional(readOnly = true)
-    public SeatAssignmentResponse getMySeat(Long moduleId, User currentUser) {
-        Student student = studentRepo.findByAccountId(currentUser.getId())
-                .orElseThrow(() -> new ResourceNotFoundException("No student profile linked to this account"));
-        ClassroomLayout layout = layoutRepo.findByModuleId(moduleId).orElse(null);
-        if (layout == null) return null;
-        return seatRepo.findByLayoutIdAndStudentId(layout.getId(), student.getId())
-                .map(this::toSeatResponse)
-                .orElse(null);
-    }
-
-    private void checkSeatPermission(Long moduleId, Long targetStudentId, User currentUser) {
+    private void checkSeatPermissionPerModule(Long moduleId, Long targetStudentId, User currentUser) {
         if (currentUser.getRole() == Role.ADMIN || currentUser.getRole() == Role.FACILITATOR) {
-            return; // Admin/Facilitator can assign anyone
+            return;
         }
 
         if (currentUser.getRole() != Role.STUDENT) {
             throw new AccessDeniedException("Only admins, facilitators, or team leaders can assign seats");
         }
 
-        // Student must be a team leader
         Student currentStudent = studentRepo.findByAccountId(currentUser.getId())
                 .orElseThrow(() -> new ResourceNotFoundException("No student profile linked"));
 
@@ -154,7 +220,6 @@ public class SeatingService {
             throw new AccessDeniedException("Only team leaders can assign seats");
         }
 
-        // Target student must be in the leader's team
         var leaderMembership = teamMemberRepo.findByStudentIdAndTeamModuleId(currentStudent.getId(), moduleId);
         if (leaderMembership.isEmpty()) {
             throw new AccessDeniedException("You are not a member of any team in this module");
@@ -162,7 +227,6 @@ public class SeatingService {
 
         Long leaderTeamId = leaderMembership.get().getTeam().getId();
         boolean targetInTeam = teamMemberRepo.existsByTeamIdAndStudentId(leaderTeamId, targetStudentId);
-        // Also allow assigning self
         if (!targetInTeam && !targetStudentId.equals(currentStudent.getId())) {
             throw new AccessDeniedException("You can only assign seats to your team members");
         }
@@ -174,8 +238,6 @@ public class SeatingService {
 
         return ClassroomLayoutResponse.builder()
                 .id(layout.getId())
-                .moduleId(layout.getModule().getId())
-                .moduleName(layout.getModule().getName())
                 .totalRows(layout.getTotalRows())
                 .columnsPerRow(layout.getColumnsPerRow())
                 .columnGroups(layout.getColumnGroups())

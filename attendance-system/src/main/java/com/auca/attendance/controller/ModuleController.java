@@ -4,6 +4,7 @@ import com.auca.attendance.dto.request.ModuleRequest;
 import com.auca.attendance.dto.request.ModuleSelectionRequest;
 import com.auca.attendance.dto.request.ModuleStatusRequest;
 import com.auca.attendance.dto.response.ApiResponse;
+import com.auca.attendance.dto.response.InstructorCandidate;
 import com.auca.attendance.dto.response.ModuleResponse;
 import com.auca.attendance.entity.User;
 import com.auca.attendance.enums.ModuleStatus;
@@ -94,11 +95,30 @@ public class ModuleController {
         return ResponseEntity.ok(ApiResponse.success("Module updated", moduleService.update(id, request)));
     }
 
+    /** POST /modules/{id}/instructors?instructorId=N — assign an instructor to this module.
+     *  Each instructor may teach at most ONE module; assigning here unbinds them from any
+     *  previous module. Both ADMIN and FACILITATOR can do this. */
     @PostMapping("/{id}/instructors")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN','FACILITATOR')")
     public ResponseEntity<ApiResponse<ModuleResponse>> assignInstructor(
             @PathVariable Long id, @RequestParam Long instructorId) {
         return ResponseEntity.ok(ApiResponse.success("Instructor assigned",
                 moduleService.assignInstructor(id, instructorId)));
+    }
+
+    /** DELETE /modules/{id}/instructors/{instructorId} — unbind an instructor from a module. */
+    @DeleteMapping("/{id}/instructors/{instructorId}")
+    @PreAuthorize("hasAnyRole('ADMIN','FACILITATOR')")
+    public ResponseEntity<ApiResponse<ModuleResponse>> unassignInstructor(
+            @PathVariable Long id, @PathVariable Long instructorId) {
+        return ResponseEntity.ok(ApiResponse.success("Instructor unassigned",
+                moduleService.unassignInstructor(id, instructorId)));
+    }
+
+    /** GET /modules/instructor-candidates — every active INSTRUCTOR with their current module (if any). */
+    @GetMapping("/instructor-candidates")
+    @PreAuthorize("hasAnyRole('ADMIN','FACILITATOR')")
+    public ResponseEntity<ApiResponse<List<InstructorCandidate>>> instructorCandidates() {
+        return ResponseEntity.ok(ApiResponse.success(moduleService.listInstructorCandidates()));
     }
 }

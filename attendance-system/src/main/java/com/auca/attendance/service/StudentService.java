@@ -32,11 +32,11 @@ public class StudentService {
     private static final String TEMP_CHARS =
             "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
 
-    private final StudentRepository studentRepository;
-    private final UserRepository    userRepository;
-    private final PasswordEncoder   passwordEncoder;
-    private final JavaMailSender    mailSender;
-    private final FileStorageService fileStorageService;
+    private final StudentRepository    studentRepository;
+    private final UserRepository       userRepository;
+    private final PasswordEncoder      passwordEncoder;
+    private final JavaMailSender       mailSender;
+    private final FileStorageService   fileStorageService;
 
     @Transactional(readOnly = true)
     public List<StudentResponse> getAll(Integer cohortYear) {
@@ -66,23 +66,38 @@ public class StudentService {
 
     @Transactional
     public StudentResponse create(StudentRequest request) {
-        if (studentRepository.existsByEmail(request.getEmail())) {
+        // Email and studentId are now optional — only check duplicates when supplied.
+        if (request.getEmail() != null && !request.getEmail().isBlank()
+                && studentRepository.existsByEmail(request.getEmail())) {
             throw new ConflictException("Email already in use: " + request.getEmail());
         }
-        if (studentRepository.existsByStudentId(request.getStudentId())) {
-            throw new ConflictException("Student ID already exists: " + request.getStudentId());
+
+        String studentId = (request.getStudentId() == null || request.getStudentId().isBlank())
+                ? generateStudentId()
+                : request.getStudentId();
+
+        if (studentRepository.existsByStudentId(studentId)) {
+            throw new ConflictException("Student ID already exists: " + studentId);
         }
 
+        Integer cohortYear = request.getCohortYear() != null
+                ? request.getCohortYear()
+                : java.time.Year.now().getValue();
+
         Student student = Student.builder()
-                .studentId(request.getStudentId())
+                .studentId(studentId)
                 .name(request.getName())
                 .email(request.getEmail())
-                .cohortYear(request.getCohortYear())
+                .cohortYear(cohortYear)
                 .program(request.getProgram())
                 .phone(request.getPhone())
                 .build();
 
         if (request.isCreateAccount()) {
+            if (request.getEmail() == null || request.getEmail().isBlank()) {
+                throw new ConflictException(
+                        "Email is required when creating a portal account for the student");
+            }
             if (userRepository.existsByEmail(request.getEmail())) {
                 throw new ConflictException(
                         "A user account already exists for: " + request.getEmail());
@@ -96,10 +111,23 @@ public class StudentService {
                     .build());
             student.setAccount(account);
             sendWelcomeEmail(request.getEmail(), request.getName(),
-                    request.getStudentId(), tempPassword);
+                    studentId, tempPassword);
         }
 
         return toResponse(studentRepository.save(student));
+    }
+
+    /** Generates a unique student id of the form AUCA{YY}-{seq} (e.g. AUCA26-0001). */
+    private String generateStudentId() {
+        String prefix = "AUCA" + String.format("%02d", java.time.Year.now().getValue() % 100) + "-";
+        for (int i = 0; i < 1000; i++) {
+            int seq = (int) (studentRepository.count() + 1 + i);
+            String candidate = prefix + String.format("%04d", seq);
+            if (!studentRepository.existsByStudentId(candidate)) {
+                return candidate;
+            }
+        }
+        throw new IllegalStateException("Could not allocate a unique student id");
     }
 
     @Transactional

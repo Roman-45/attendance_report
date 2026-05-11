@@ -29,6 +29,11 @@ public class AttendanceService {
     private final AbsenceDetectionService absenceDetectionService;
     private final EnrollmentRepository enrollmentRepo;
 
+    /** AUCA classes are evening-only, 18:00–21:00. */
+    private static final java.time.LocalTime EVENING_START = java.time.LocalTime.of(18, 0);
+    private static final java.time.LocalTime EVENING_END   = java.time.LocalTime.of(21, 0);
+    private static final String EVENING_PERIOD = "EVENING";
+
     @Transactional
     public SessionResponse createSession(Long moduleId, SessionRequest request, User currentUser) {
         var module = moduleRepo.findById(moduleId)
@@ -37,9 +42,9 @@ public class AttendanceService {
         AttendanceSession session = AttendanceSession.builder()
                 .module(module)
                 .sessionDate(request.getSessionDate())
-                .startTime(request.getStartTime())
-                .endTime(request.getEndTime())
-                .period(request.getPeriod())
+                .startTime(request.getStartTime() != null ? request.getStartTime() : EVENING_START)
+                .endTime(request.getEndTime() != null ? request.getEndTime() : EVENING_END)
+                .period(EVENING_PERIOD)
                 .createdBy(currentUser)
                 .build();
 

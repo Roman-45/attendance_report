@@ -79,6 +79,8 @@ public class User implements UserDetails {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "assigned_module_id")
     @JsonIgnore
+    @ToString.Exclude
+    @EqualsAndHashCode.Exclude
     private Module assignedModule;
 
     /** Admin-controlled flag — deactivated accounts cannot log in. */

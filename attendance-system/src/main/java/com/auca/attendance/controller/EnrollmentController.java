@@ -40,9 +40,10 @@ public class EnrollmentController {
         return ResponseEntity.ok(ApiResponse.success("Student unenrolled", null));
     }
 
-    /** List all enrolled students for a module — ADMIN / FACILITATOR */
+    /** List all enrolled students for a module — ADMIN / FACILITATOR / INSTRUCTOR.
+     *  Instructors need this to drive the Marks-entry grid for their module. */
     @GetMapping("/modules/{moduleId}/enrollments")
-    @PreAuthorize("hasAnyRole('ADMIN','FACILITATOR')")
+    @PreAuthorize("hasAnyRole('ADMIN','FACILITATOR','INSTRUCTOR')")
     public ResponseEntity<ApiResponse<List<EnrollmentResponse>>> getByModule(
             @PathVariable Long moduleId) {
         return ResponseEntity.ok(ApiResponse.success(enrollmentService.getByModule(moduleId)));

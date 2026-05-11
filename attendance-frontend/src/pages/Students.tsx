@@ -235,20 +235,16 @@ export default function Students() {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Student ID</TableHead>
                 <TableHead>Name</TableHead>
-                <TableHead className="hidden sm:table-cell">Email</TableHead>
-                <TableHead className="hidden md:table-cell">Program</TableHead>
-                <TableHead className="hidden md:table-cell">Cohort</TableHead>
                 <TableHead className="w-32">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {isLoading ? (
-                Array.from({ length: 6 }).map((_, i) => <SkeletonRow key={i} cols={6} />)
+                Array.from({ length: 6 }).map((_, i) => <SkeletonRow key={i} cols={2} />)
               ) : students.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={6} className="text-center py-12 text-[#94A3B8]">
+                  <TableCell colSpan={2} className="text-center py-12 text-[#94A3B8]">
                     <Search className="h-8 w-8 mx-auto mb-2 opacity-30" />
                     {search ? `No students matching "${search}"` : 'No students yet'}
                   </TableCell>
@@ -256,17 +252,7 @@ export default function Students() {
               ) : (
                 students.map((s) => (
                   <TableRow key={s.id}>
-                    <TableCell className="font-mono text-xs">{s.studentId}</TableCell>
                     <TableCell className="font-medium">{s.name}</TableCell>
-                    <TableCell className="hidden sm:table-cell text-[#64748B] dark:text-[#94A3B8]">{s.email}</TableCell>
-                    <TableCell className="hidden md:table-cell">
-                      {s.program ? (
-                        <Badge variant="secondary">{s.program}</Badge>
-                      ) : (
-                        <span className="text-[#CBD5E1]">—</span>
-                      )}
-                    </TableCell>
-                    <TableCell className="hidden md:table-cell">{s.cohortYear}</TableCell>
                     <TableCell>
                       <div className="flex items-center gap-1">
                         <Button variant="ghost" size="sm" onClick={() => openEdit(s)}>
@@ -338,16 +324,6 @@ export default function Students() {
           </DialogHeader>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-1.5">
-              <Label>Student ID</Label>
-              <Input
-                value={form.studentId}
-                onChange={(e) => setForm(f => ({ ...f, studentId: e.target.value }))}
-                required
-                disabled={!!editStudent}
-                placeholder="e.g. STU20250001"
-              />
-            </div>
-            <div className="space-y-1.5">
               <Label>Full Name</Label>
               <Input
                 value={form.name}
@@ -355,36 +331,53 @@ export default function Students() {
                 required
                 placeholder="Jane Doe"
               />
+              <p className="text-[11px] text-muted-foreground">
+                Only the name is required. Other details can be added later.
+              </p>
             </div>
-            <div className="space-y-1.5">
-              <Label>Email</Label>
-              <Input
-                type="email"
-                value={form.email}
-                onChange={(e) => setForm(f => ({ ...f, email: e.target.value }))}
-                required
-                placeholder="jane@auca.ac.rw"
-              />
-            </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div className="space-y-1.5">
-                <Label>Program</Label>
-                <Input
-                  value={form.program}
-                  onChange={(e) => setForm(f => ({ ...f, program: e.target.value }))}
-                  required
-                  placeholder="e.g. Computer Science"
-                />
+            <details className="text-sm">
+              <summary className="cursor-pointer text-muted-foreground hover:text-foreground">
+                Optional details
+              </summary>
+              <div className="mt-3 space-y-3 rounded-md border border-border-subtle p-3">
+                <div className="space-y-1.5">
+                  <Label>Student ID</Label>
+                  <Input
+                    value={form.studentId}
+                    onChange={(e) => setForm(f => ({ ...f, studentId: e.target.value }))}
+                    disabled={!!editStudent}
+                    placeholder="Auto-generated if blank"
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <Label>Email</Label>
+                  <Input
+                    type="email"
+                    value={form.email}
+                    onChange={(e) => setForm(f => ({ ...f, email: e.target.value }))}
+                    placeholder="jane@auca.ac.rw"
+                  />
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="space-y-1.5">
+                    <Label>Program / Department</Label>
+                    <Input
+                      value={form.program}
+                      onChange={(e) => setForm(f => ({ ...f, program: e.target.value }))}
+                      placeholder="e.g. Computer Science"
+                    />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label>Cohort Year</Label>
+                    <YearPicker
+                      value={form.cohortYear}
+                      onChange={(year) => setForm(f => ({ ...f, cohortYear: year }))}
+                      minYear={2000}
+                    />
+                  </div>
+                </div>
               </div>
-              <div className="space-y-1.5">
-                <Label>Cohort Year</Label>
-                <YearPicker
-                  value={form.cohortYear}
-                  onChange={(year) => setForm(f => ({ ...f, cohortYear: year }))}
-                  minYear={2000}
-                />
-              </div>
-            </div>
+            </details>
             <DialogFooter>
               <Button type="button" variant="outline" onClick={() => setDialogOpen(false)}>
                 Cancel

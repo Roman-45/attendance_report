@@ -171,8 +171,6 @@ export interface TeamMember {
 
 export interface ClassroomLayout {
   id: number
-  moduleId: number
-  moduleName: string
   totalRows: number
   columnsPerRow: number
   columnGroups: number

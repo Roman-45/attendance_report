@@ -9,8 +9,6 @@ import java.util.List;
 @Builder
 public class ClassroomLayoutResponse {
     private Long id;
-    private Long moduleId;
-    private String moduleName;
     private int totalRows;
     private int columnsPerRow;
     private int columnGroups;

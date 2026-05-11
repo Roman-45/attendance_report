@@ -1,6 +1,7 @@
 package com.auca.attendance.service;
 
 import com.auca.attendance.dto.request.ModuleRequest;
+import com.auca.attendance.dto.response.InstructorCandidate;
 import com.auca.attendance.dto.response.ModuleResponse;
 import com.auca.attendance.entity.Module;
 import com.auca.attendance.entity.User;
@@ -63,15 +64,75 @@ public class ModuleService {
         return toResponse(moduleRepository.save(module));
     }
 
+    /**
+     * Assign an instructor to a module enforcing 1-to-1:
+     *  - the user must have role INSTRUCTOR
+     *  - if they already teach a different module, they are unbound from it first
+     *  - the target module must not already have a *different* instructor
+     */
     @Transactional
     public ModuleResponse assignInstructor(Long moduleId, Long instructorId) {
         Module module = findModule(moduleId);
         User instructor = userRepository.findById(instructorId)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found: " + instructorId));
+
+        if (instructor.getRole() != Role.INSTRUCTOR) {
+            throw new ConflictException("User " + instructor.getName() + " is not an instructor");
+        }
+
+        // If the module already has an instructor, refuse unless it's the same one.
+        if (!module.getInstructors().isEmpty()
+                && module.getInstructors().stream().noneMatch(u -> u.getId().equals(instructorId))) {
+            User current = module.getInstructors().iterator().next();
+            throw new ConflictException(
+                    "Module already has an instructor (" + current.getName()
+                            + "). Unassign them first.");
+        }
+
+        // If this instructor was bound to a different module, unbind them first.
+        Module previous = instructor.getAssignedModule();
+        if (previous != null && !previous.getId().equals(moduleId)) {
+            previous.getInstructors().removeIf(u -> u.getId().equals(instructorId));
+            moduleRepository.save(previous);
+        }
+
         module.getInstructors().add(instructor);
-        // Also set the direct assignment for consistency
         instructor.setAssignedModule(module);
         userRepository.save(instructor);
+        return toResponse(moduleRepository.save(module));
+    }
+
+    /** Every active INSTRUCTOR with the module they currently teach (or null if free). */
+    @Transactional(readOnly = true)
+    public List<InstructorCandidate> listInstructorCandidates() {
+        return userRepository.findAllByRole(Role.INSTRUCTOR).stream()
+                .filter(u -> Boolean.TRUE.equals(u.getActive()))
+                .map(u -> {
+                    Module assigned = u.getAssignedModule();
+                    return InstructorCandidate.builder()
+                            .id(u.getId())
+                            .name(u.getName())
+                            .email(u.getEmail())
+                            .currentModuleId(assigned != null ? assigned.getId() : null)
+                            .currentModuleCode(assigned != null ? assigned.getCode() : null)
+                            .build();
+                })
+                .toList();
+    }
+
+    /** Unbind an instructor from a module (their assigned_module_id is cleared). */
+    @Transactional
+    public ModuleResponse unassignInstructor(Long moduleId, Long instructorId) {
+        Module module = findModule(moduleId);
+        User instructor = userRepository.findById(instructorId)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found: " + instructorId));
+
+        module.getInstructors().removeIf(u -> u.getId().equals(instructorId));
+        if (instructor.getAssignedModule() != null
+                && instructor.getAssignedModule().getId().equals(moduleId)) {
+            instructor.setAssignedModule(null);
+            userRepository.save(instructor);
+        }
         return toResponse(moduleRepository.save(module));
     }
 

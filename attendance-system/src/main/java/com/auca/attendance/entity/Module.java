@@ -57,6 +57,8 @@ public class Module {
         inverseJoinColumns = @JoinColumn(name = "instructor_id")
     )
     @Builder.Default
+    @ToString.Exclude
+    @EqualsAndHashCode.Exclude
     private Set<User> instructors = new HashSet<>();
 
     @Column(name = "created_at", nullable = false, updatable = false)

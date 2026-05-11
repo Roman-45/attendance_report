@@ -1,9 +1,11 @@
 package com.auca.attendance.controller;
 
+import com.auca.attendance.dto.request.CreateUserRequest;
 import com.auca.attendance.dto.request.InviteTeamLeaderRequest;
 import com.auca.attendance.dto.response.ApiResponse;
 import com.auca.attendance.entity.User;
 import com.auca.attendance.enums.Role;
+import com.auca.attendance.exception.ConflictException;
 import com.auca.attendance.exception.ResourceNotFoundException;
 import com.auca.attendance.repository.UserRepository;
 import com.auca.attendance.service.InvitationService;
@@ -16,11 +18,15 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.mail.SimpleMailMessage;
+import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 
+import java.security.SecureRandom;
 import java.time.OffsetDateTime;
 import java.util.Map;
 
@@ -30,8 +36,10 @@ import java.util.Map;
 @PreAuthorize("hasRole('ADMIN')")
 public class UserManagementController {
 
-    private final UserRepository userRepository;
+    private final UserRepository    userRepository;
     private final InvitationService invitationService;
+    private final PasswordEncoder   passwordEncoder;
+    private final JavaMailSender    mailSender;
 
     @Data
     @Builder
@@ -130,6 +138,76 @@ public class UserManagementController {
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(ApiResponse.success("Team leader invitation sent to " + invited.getEmail(),
                         toSummary(invited)));
+    }
+
+    /**
+     * POST /api/v1/admin/users
+     * Creates a new user account directly. Admin picks the role. If no
+     * password is supplied, a temporary one is generated and emailed.
+     */
+    @Transactional
+    @PostMapping
+    public ResponseEntity<ApiResponse<UserSummary>> createUser(
+            @Valid @RequestBody CreateUserRequest request) {
+
+        if (userRepository.existsByEmail(request.getEmail())) {
+            throw new ConflictException("Email already in use: " + request.getEmail());
+        }
+
+        boolean generatedPassword = request.getPassword() == null || request.getPassword().isBlank();
+        String rawPassword = generatedPassword ? generateTempPassword(12) : request.getPassword();
+
+        User user = User.builder()
+                .name(request.getName())
+                .email(request.getEmail())
+                .password(passwordEncoder.encode(rawPassword))
+                .role(request.getRole())
+                .active(true)
+                .emailVerified(true)   // admin-created accounts are pre-verified
+                .build();
+
+        user = userRepository.save(user);
+
+        if (generatedPassword) {
+            sendCredentialsEmail(user.getEmail(), user.getName(), rawPassword);
+        }
+
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(ApiResponse.success(
+                        generatedPassword
+                                ? "User created. Temporary password emailed to " + user.getEmail()
+                                : "User created.",
+                        toSummary(user)));
+    }
+
+    private static final String TEMP_CHARS =
+            "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+
+    private String generateTempPassword(int length) {
+        SecureRandom rng = new SecureRandom();
+        StringBuilder sb = new StringBuilder(length);
+        for (int i = 0; i < length; i++) {
+            sb.append(TEMP_CHARS.charAt(rng.nextInt(TEMP_CHARS.length())));
+        }
+        return sb.toString();
+    }
+
+    private void sendCredentialsEmail(String to, String name, String tempPassword) {
+        try {
+            SimpleMailMessage mail = new SimpleMailMessage();
+            mail.setTo(to);
+            mail.setSubject("[AUCA] Your AUCA Attendance Portal account");
+            mail.setText(String.format(
+                    "Hello %s,%n%n" +
+                    "An administrator has created an account for you.%n%n" +
+                    "Email: %s%nTemporary password: %s%n%n" +
+                    "Please log in and change your password immediately.%n%n" +
+                    "Login: http://localhost:5173%n",
+                    name, to, tempPassword));
+            mailSender.send(mail);
+        } catch (Exception ignored) {
+            // Mail failures shouldn't block account creation in dev.
+        }
     }
 
     private User findUser(Long id) {

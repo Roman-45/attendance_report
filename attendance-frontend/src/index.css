@@ -1,160 +1,238 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+/* ─────────────────────────────────────────────────────────────────────
+   AUCA Attendance — design tokens.
+   Aligned with `references/auca-frontend-design-guide.md` (§11).
+   Brand anchor: AUCA blue #0060A0. Typography: Fraunces + Public Sans
+   + JetBrains Mono. Light theme is the default and the headline; dark
+   mode is preserved for parity (not actively maintained).
+   ───────────────────────────────────────────────────────────────────── */
+
+@import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Public+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@500&display=swap');
 
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-/* ─────────────────────────────────────────────────────────────────────
-   AUCA design tokens — ported from frontend-design-reference/theme.css.
-   Hex values are intentional: design language is "border-driven, one
-   accent colour" (AUCA navy). Per the design brief, dark mode is NOT
-   actively maintained — the legacy .dark block below stays for any
-   third-party shadcn components that branch on `dark:` until they're
-   either ported (M1+) or removed.
-   ───────────────────────────────────────────────────────────────────── */
-
 @layer base {
   :root {
-    /* Base font size */
-    --font-size: 16px;
-    --font-sans: 'Inter', ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    /* ============ TYPOGRAPHY ============ */
+    --font-size:    16px;
+    --font-display: 'Fraunces', 'Iowan Old Style', Georgia, serif;
+    --font-sans:    'Public Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    --font-mono:    'JetBrains Mono', 'SF Mono', Consolas, monospace;
 
-    /* ─── Brand (AUCA Navy — the one accent colour) ─── */
-    --brand:            #1B3A6B;
-    --brand-hover:      #15305a;
-    --brand-light:      #EEF2F9;
-    --brand-foreground: #ffffff;
+    /* ============ AUCA BLUE SCALE (brand anchor) ============ */
+    --auca-50:  #EBF4FB;
+    --auca-100: #D2E5F4;
+    --auca-200: #A6CCEA;
+    --auca-300: #75AFDD;
+    --auca-400: #4090CC;
+    --auca-500: #1976B8;
+    --auca-600: #0060A0;  /* ★ brand anchor */
+    --auca-700: #004F86;
+    --auca-800: #003F6C;
+    --auca-900: #002F52;
+    --auca-950: #001E36;
 
-    /* ─── Surfaces ─── */
-    --background:      #F7F8FA;
-    --surface:         #ffffff;
-    --surface-raised:  #ffffff;
+    /* ============ INK (warm-cool neutrals) ============ */
+    --ink-50:  #F7F8FA;
+    --ink-100: #EFF1F4;
+    --ink-200: #E1E5EB;
+    --ink-300: #C8CFD8;
+    --ink-400: #98A1AD;
+    --ink-500: #6B7480;
+    --ink-600: #4A5260;
+    --ink-700: #353B47;
+    --ink-800: #232830;
+    --ink-900: #14181F;
+    --ink-950: #0A0D12;
 
-    /* ─── Borders ─── */
-    --border:          #E2E8F0;
-    --border-strong:   #CBD5E1;
+    /* ============ SEMANTIC ============ */
+    --success-50:  #E8F6EF;  --success-500:  #0F8A5F;  --success-700: #0A6647;
+    --warning-50:  #FDF3E2;  --warning-500:  #C77700;  --warning-700: #8F5400;
+    --danger-50:   #FCE8E9;  --danger-500:   #C83A3A;  --danger-700:  #8E2424;
+    --dns-50:      #FCE8E9;  --dns-500:      #E41B23;  /* Mastercard red — reserved for DNS Risk */
+    --info-50:     #EBF4FB;  --info-500:     #1976B8;
 
-    /* ─── Text ─── */
-    --foreground:        #111827;
-    --muted-foreground:  #6B7280;
-    --subtle-foreground: #9CA3AF;
+    /* ============ MASTERCARD ACCENTS (sparingly: lockup + footer chip) ============ */
+    --mc-red:    #E41B23;
+    --mc-orange: #F36523;
+    --mc-yellow: #FA9F1B;
 
-    /* ─── Semantic status — attendance ─── */
-    --status-present:        #16a34a;
-    --status-present-bg:     #f0fdf4;
-    --status-present-border: #bbf7d0;
-    --status-absent:         #dc2626;
-    --status-absent-bg:      #fef2f2;
-    --status-absent-border:  #fecaca;
-    --status-late:           #d97706;
-    --status-late-bg:        #fffbeb;
-    --status-late-border:    #fde68a;
-    --status-excused:        #2563eb;
-    --status-excused-bg:     #eff6ff;
-    --status-excused-border: #bfdbfe;
+    /* ─────────────────────────────────────────────────────────────────
+       Semantic aliases — preserve every existing token name so all
+       components keep working. Values update to design-guide tokens.
+       ───────────────────────────────────────────────────────────────── */
 
-    /* ─── Module status ─── */
-    --status-draft:          #6B7280;
-    --status-draft-bg:       #F3F4F6;
-    --status-draft-border:   #D1D5DB;
-    --status-active:         #16a34a;
-    --status-active-bg:      #f0fdf4;
-    --status-active-border:  #bbf7d0;
-    --status-closed:         #9CA3AF;
-    --status-closed-bg:      #F9FAFB;
-    --status-closed-border:  #E5E7EB;
+    /* Brand (one accent — AUCA blue) */
+    --brand:            var(--auca-600);
+    --brand-hover:      var(--auca-700);
+    --brand-light:      var(--auca-50);
+    --brand-foreground: #FFFFFF;
 
-    /* ─── Invitation status ─── */
-    --status-pending:    #d97706;
-    --status-pending-bg: #fffbeb;
-    --status-accepted:   #16a34a;
-    --status-accepted-bg:#f0fdf4;
+    /* Surfaces */
+    --background:     var(--ink-50);    /* page canvas */
+    --surface:        #FFFFFF;          /* card */
+    --surface-raised: #FFFFFF;
+    --surface-canvas: var(--ink-50);
+    --surface-sunken: var(--ink-50);
 
-    /* ─── Feedback ─── */
-    --success:               #16a34a;
-    --success-bg:            #f0fdf4;
-    --success-foreground:    #ffffff;
-    --warning:               #d97706;
-    --warning-bg:            #fffbeb;
-    --warning-foreground:    #ffffff;
-    --destructive:           #dc2626;
-    --destructive-bg:        #fef2f2;
-    --destructive-foreground:#ffffff;
-    --info:                  #2563eb;
-    --info-bg:               #eff6ff;
-    --info-foreground:       #ffffff;
+    /* Borders */
+    --border:        var(--ink-200);
+    --border-subtle: var(--ink-100);
+    --border-strong: var(--ink-300);
+    --border-brand:  var(--auca-600);
 
-    /* ─── shadcn/ui compat aliases ─── */
+    /* Text */
+    --foreground:        var(--ink-900);
+    --muted-foreground:  var(--ink-600);
+    --subtle-foreground: var(--ink-500);
+    --text-tertiary:     var(--ink-500);
+    --text-muted:        var(--ink-400);
+    --text-link:         var(--auca-500);
+    --text-link-hover:   var(--auca-600);
+
+    /* Status — attendance.
+       NB: red is reserved for *alerts* (DNS Risk, destructive actions,
+       emergencies) — NOT for everyday attendance state. "Absent" uses a
+       muted slate so the eye reaches DNS Risk first. */
+    --status-present:        var(--success-500);
+    --status-present-bg:     var(--success-50);
+    --status-present-border: #BEEBD3;
+    --status-absent:         var(--ink-700);
+    --status-absent-bg:      var(--ink-100);
+    --status-absent-border:  var(--ink-300);
+    --status-late:           var(--warning-500);
+    --status-late-bg:        var(--warning-50);
+    --status-late-border:    #F4DDB0;
+    --status-excused:        var(--auca-500);
+    --status-excused-bg:     var(--auca-50);
+    --status-excused-border: var(--auca-100);
+
+    /* Status — module */
+    --status-draft:         var(--ink-500);
+    --status-draft-bg:      var(--ink-100);
+    --status-draft-border:  var(--ink-200);
+    --status-active:        var(--success-500);
+    --status-active-bg:     var(--success-50);
+    --status-active-border: #BEEBD3;
+    --status-closed:        var(--ink-400);
+    --status-closed-bg:     var(--ink-50);
+    --status-closed-border: var(--ink-200);
+
+    /* Status — invitation */
+    --status-pending:    var(--warning-500);
+    --status-pending-bg: var(--warning-50);
+    --status-accepted:   var(--success-500);
+    --status-accepted-bg:var(--success-50);
+
+    /* Feedback */
+    --success:               var(--success-500);
+    --success-bg:            var(--success-50);
+    --success-foreground:    #FFFFFF;
+    --warning:               var(--warning-500);
+    --warning-bg:            var(--warning-50);
+    --warning-foreground:    #FFFFFF;
+    --destructive:           var(--danger-500);
+    --destructive-bg:        var(--danger-50);
+    --destructive-foreground:#FFFFFF;
+    --info:                  var(--info-500);
+    --info-bg:               var(--info-50);
+    --info-foreground:       #FFFFFF;
+
+    /* shadcn/ui compat */
     --card:                 var(--surface);
     --card-foreground:      var(--foreground);
     --popover:              var(--surface-raised);
     --popover-foreground:   var(--foreground);
     --primary:              var(--brand);
     --primary-foreground:   var(--brand-foreground);
-    --secondary:            #EEF2F9;
+    --secondary:            var(--auca-50);
     --secondary-foreground: var(--brand);
-    --muted:                #F3F4F6;
+    --muted:                var(--ink-100);
     --accent:               var(--brand-light);
     --accent-foreground:    var(--brand);
     --input:                transparent;
     --input-background:     var(--surface);
-    --switch-background:    #CBD5E1;
+    --switch-background:    var(--ink-300);
     --ring:                 var(--brand);
 
-    /* ─── Sidebar tokens ─── */
+    /* Sidebar */
     --sidebar:                    var(--surface);
     --sidebar-foreground:         var(--foreground);
     --sidebar-primary:            var(--brand);
     --sidebar-primary-foreground: var(--brand-foreground);
     --sidebar-accent:             var(--brand-light);
-    --sidebar-accent-foreground:  var(--brand);
-    --sidebar-border:             var(--border);
+    --sidebar-accent-foreground:  var(--auca-700);
+    --sidebar-border:             var(--border-subtle);
     --sidebar-ring:               var(--brand);
 
-    /* ─── Charts ─── */
-    --chart-1: #1B3A6B;
-    --chart-2: #16a34a;
-    --chart-3: #d97706;
-    --chart-4: #2563eb;
-    --chart-5: #dc2626;
+    /* Charts (anchored on AUCA blue + Mastercard accent palette) */
+    --chart-1: var(--auca-600);
+    --chart-2: var(--success-500);
+    --chart-3: var(--warning-500);
+    --chart-4: var(--mc-orange);
+    --chart-5: var(--dns-500);
 
-    /* ─── Shape — unified 6px radius ─── */
-    --radius: 0.375rem;
+    /* Shape */
+    --radius:    10px;       /* default — buttons, inputs */
+    --radius-xs: 4px;
+    --radius-sm: 6px;
+    --radius-md: 10px;
+    --radius-lg: 14px;
+    --radius-xl: 20px;
 
-    /* ─── Shadows (minimal — border-driven) ─── */
-    --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
-    --shadow:    0 1px 3px 0 rgb(0 0 0 / 0.08), 0 1px 2px -1px rgb(0 0 0 / 0.08);
-    --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.08), 0 2px 4px -2px rgb(0 0 0 / 0.05);
+    /* Layered shadows (per guide §4.3) */
+    --shadow-xs: 0 1px 1px rgba(20,24,31,0.04);
+    --shadow-sm: 0 1px 2px rgba(20,24,31,0.04), 0 1px 1px rgba(20,24,31,0.03);
+    --shadow:    0 1px 2px rgba(20,24,31,0.04), 0 1px 1px rgba(20,24,31,0.03);
+    --shadow-md: 0 4px 12px -2px rgba(20,24,31,0.06), 0 2px 4px -1px rgba(20,24,31,0.04);
+    --shadow-lg: 0 12px 32px -8px rgba(20,24,31,0.10), 0 4px 12px -4px rgba(20,24,31,0.06);
+    --shadow-xl: 0 24px 48px -12px rgba(20,24,31,0.14), 0 8px 20px -6px rgba(20,24,31,0.08);
+    --shadow-brand: 0 4px 14px -4px rgba(0,96,160,0.35), 0 2px 4px -1px rgba(0,96,160,0.20);
+
+    /* Motion */
+    --ease-standard:    cubic-bezier(0.2, 0, 0, 1);
+    --ease-emphasized:  cubic-bezier(0.4, 0, 0.2, 1);
+    --duration-instant: 80ms;
+    --duration-fast:    160ms;
+    --duration-normal:  240ms;
+    --duration-slow:    320ms;
+
+    /* Focus */
+    --focus-ring:   0 0 0 3px rgba(0,96,160,0.25);
+    --focus-border: var(--auca-600);
   }
 
-  /* Legacy dark-mode block — design brief says dark is not maintained.
-     Kept only so existing `dark:` utility classes don't render literal
-     `var()` strings during the transition. Will be removed in a later
-     phase once all dark: utilities are stripped from ported components. */
+  /* Dark theme — parity, not headline */
   .dark {
-    --background:           #0B1120;
-    --foreground:           #F1F5F9;
-    --surface:              #111827;
-    --surface-raised:       #111827;
-    --card:                 #111827;
-    --card-foreground:      #F1F5F9;
-    --popover:              #111827;
-    --popover-foreground:   #F1F5F9;
-    --secondary:            #1E293B;
-    --secondary-foreground: #E2E8F0;
-    --muted:                #1E293B;
-    --muted-foreground:     #94A3B8;
-    --accent:               #1E293B;
-    --accent-foreground:    #F1F5F9;
-    --border:               #1E3A5F;
-    --input:                #1E3A5F;
+    --background:           var(--ink-950);
+    --foreground:           var(--ink-50);
+    --surface:              var(--ink-900);
+    --surface-raised:       var(--ink-800);
+    --surface-canvas:       var(--ink-950);
+    --card:                 var(--ink-900);
+    --card-foreground:      var(--ink-50);
+    --popover:              var(--ink-800);
+    --popover-foreground:   var(--ink-50);
+    --secondary:            var(--ink-800);
+    --secondary-foreground: var(--ink-100);
+    --muted:                var(--ink-800);
+    --muted-foreground:     var(--ink-400);
+    --subtle-foreground:    var(--ink-500);
+    --accent:               var(--auca-900);
+    --accent-foreground:    var(--ink-50);
+    --border:               var(--ink-800);
+    --border-subtle:        var(--ink-900);
+    --border-strong:        var(--ink-700);
+    --input:                var(--ink-800);
+    --brand-light:          var(--auca-900);
+    --sidebar-accent:       var(--auca-900);
+    --sidebar-accent-foreground: var(--ink-50);
   }
 }
 
 @layer base {
-  * {
-    border-color: var(--border);
-  }
+  * { border-color: var(--border); }
 
   html {
     scroll-behavior: smooth;
@@ -165,36 +243,46 @@
     background-color: var(--background);
     color: var(--foreground);
     font-family: var(--font-sans);
+    font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11';
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     text-rendering: optimizeLegibility;
   }
 
-  /* Typography scale — 28 / 20 / 16 / 14 / 12 (max 4 sizes per brief) */
+  /* ─── Typography (per guide §3) ───────────────────────────────────
+     Page titles + KPI numbers use Fraunces (display).
+     Section heads + body use Public Sans.
+     IDs/codes use JetBrains Mono via .font-mono utility.
+     ─────────────────────────────────────────────────────────────── */
   h1 {
-    font-size: 1.75rem;
-    font-weight: 600;
-    line-height: 1.35;
-    letter-spacing: -0.01em;
+    font-family: var(--font-display);
+    font-size: 2.25rem;       /* display-lg 36px */
+    line-height: 2.75rem;     /* 44px */
+    font-weight: 500;
+    letter-spacing: -0.02em;
     color: var(--foreground);
   }
   h2 {
-    font-size: 1.25rem;
+    font-family: var(--font-sans);
+    font-size: 1.375rem;      /* heading-lg 22px */
+    line-height: 1.875rem;    /* 30px */
     font-weight: 600;
-    line-height: 1.4;
-    letter-spacing: -0.005em;
+    letter-spacing: -0.01em;
     color: var(--foreground);
   }
   h3 {
-    font-size: 1rem;
+    font-family: var(--font-sans);
+    font-size: 1.125rem;      /* heading-md 18px */
+    line-height: 1.625rem;    /* 26px */
     font-weight: 600;
-    line-height: 1.5;
+    letter-spacing: -0.005em;
     color: var(--foreground);
   }
   h4 {
-    font-size: 0.875rem;
+    font-family: var(--font-sans);
+    font-size: 1rem;          /* heading-sm 16px */
+    line-height: 1.5rem;
     font-weight: 600;
-    line-height: 1.5;
     color: var(--foreground);
   }
 
@@ -203,61 +291,55 @@
     color: var(--brand);
   }
 
-  ::-webkit-scrollbar {
-    width: 6px;
-    height: 6px;
-  }
-  ::-webkit-scrollbar-track {
-    background: transparent;
-  }
-  ::-webkit-scrollbar-thumb {
-    background: var(--border);
-    border-radius: 3px;
-  }
-  ::-webkit-scrollbar-thumb:hover {
-    background: var(--border-strong);
+  ::-webkit-scrollbar { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+  ::-webkit-scrollbar-thumb:hover { background: var(--border-strong); }
+
+  :focus { outline: none; }
+  :focus-visible {
+    outline: none;
+    box-shadow: var(--focus-ring);
+    border-radius: var(--radius-sm);
   }
 
-  :focus {
-    outline: none;
+  /* Reduced motion (per guide §7) */
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+      animation-duration: 0.01ms !important;
+      transition-duration: 0.01ms !important;
+    }
   }
 }
 
 @layer utilities {
-  /* Custom shadow utilities matching the design reference */
-  .shadow-card {
-    box-shadow: 0 2px 8px 0 rgb(0 0 0 / 0.06), 0 1px 2px 0 rgb(0 0 0 / 0.04);
-  }
-  .shadow-card-hover {
-    box-shadow: 0 8px 24px 0 rgb(0 0 0 / 0.10), 0 2px 6px 0 rgb(0 0 0 / 0.06);
-  }
-  .shadow-popover {
-    box-shadow: 0 8px 30px 0 rgb(0 0 0 / 0.12), 0 2px 6px 0 rgb(0 0 0 / 0.06);
-  }
-  .shadow-modal {
-    box-shadow: 0 20px 60px 0 rgb(0 0 0 / 0.15), 0 4px 12px 0 rgb(0 0 0 / 0.08);
+  /* Display headlines for KPI numbers + hero titles (per guide §3.3) */
+  .font-display { font-family: var(--font-display); font-feature-settings: 'ss01'; }
+  .font-mono    { font-family: var(--font-mono); }
+
+  .display-xl { font-family: var(--font-display); font-size: 3rem;    line-height: 3.5rem; font-weight: 500; letter-spacing: -0.02em; }
+  .display-lg { font-family: var(--font-display); font-size: 2.25rem; line-height: 2.75rem; font-weight: 500; letter-spacing: -0.02em; }
+  .display-md { font-family: var(--font-display); font-size: 1.75rem; line-height: 2.25rem; font-weight: 500; letter-spacing: -0.015em; }
+
+  .caption {
+    font-size: 0.75rem; line-height: 1.125rem; font-weight: 500;
+    letter-spacing: 0.06em; text-transform: uppercase;
+    color: var(--text-tertiary);
   }
 
-  .animate-fade-in {
-    animation: fadeIn 0.3s ease-out both;
-  }
-  .animate-slide-up {
-    animation: slideUp 0.35s cubic-bezier(0.16, 1, 0.3, 1) both;
-  }
-  .animate-scale-in {
-    animation: scaleIn 0.2s cubic-bezier(0.16, 1, 0.3, 1) both;
-  }
+  /* Layered shadows from guide §4.3 */
+  .shadow-card        { box-shadow: var(--shadow-md); }
+  .shadow-card-hover  { box-shadow: var(--shadow-lg); }
+  .shadow-popover     { box-shadow: var(--shadow-lg); }
+  .shadow-modal       { box-shadow: var(--shadow-xl); }
+  .shadow-brand       { box-shadow: var(--shadow-brand); }
 
-  @keyframes fadeIn {
-    from { opacity: 0; }
-    to   { opacity: 1; }
-  }
-  @keyframes slideUp {
-    from { opacity: 0; transform: translateY(8px); }
-    to   { opacity: 1; transform: translateY(0); }
-  }
-  @keyframes scaleIn {
-    from { opacity: 0; transform: scale(0.97); }
-    to   { opacity: 1; transform: scale(1); }
-  }
+  /* Animations (motion budget per guide §7) */
+  .animate-fade-in  { animation: fadeIn  var(--duration-normal) var(--ease-standard) both; }
+  .animate-slide-up { animation: slideUp var(--duration-normal) var(--ease-emphasized) both; }
+  .animate-scale-in { animation: scaleIn var(--duration-normal) var(--ease-emphasized) both; }
+
+  @keyframes fadeIn  { from { opacity: 0; } to { opacity: 1; } }
+  @keyframes slideUp { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+  @keyframes scaleIn { from { opacity: 0; transform: scale(0.97); }    to { opacity: 1; transform: scale(1); } }
 }
